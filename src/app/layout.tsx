@@ -1,0 +1,43 @@
+import type { Metadata } from "next";
+import { Montserrat, Playfair_Display } from "next/font/google";
+import "./globals.css";
+
+const montserrat = Montserrat({
+  subsets: ["latin"],
+  variable: "--font-montserrat",
+  weight: ["400", "500", "600"],
+});
+
+const playfair = Playfair_Display({
+  subsets: ["latin"],
+  variable: "--font-playfair",
+  weight: ["400", "500", "600", "700"],
+});
+
+export const metadata: Metadata = {
+  title: "Marcelo Ponzio Estilista",
+  description:
+    "Belleza, tecnología y cuidado profesional en un solo lugar. Reservá tus tratamientos estéticos en Marcelo Ponzio Estilista.",
+};
+
+export default function RootLayout({
+  children,
+}: Readonly<{
+  children: React.ReactNode;
+}>) {
+  const heroImageUrl =
+    "https://res.cloudinary.com/dzoupwn0e/image/upload/v1773419875/fondo_home_3_q3kumw.webp";
+
+  return (
+    <html lang="es">
+      <head>
+        <link rel="preload" href={heroImageUrl} as="image" />
+      </head>
+      <body
+        className={`${montserrat.variable} ${playfair.variable} min-h-screen bg-[#111111] text-white antialiased`}
+      >
+        {children}
+      </body>
+    </html>
+  );
+}
