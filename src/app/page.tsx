@@ -4,18 +4,28 @@ import { BrandLogo } from "@/components/brand-logo";
 import { HOME_HERO_IMAGE_URL } from "@/lib/home-hero-image";
 import { CalendarDays, Home as HomeIcon, Percent, Sparkles, User } from "lucide-react";
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 
 let hasShownHomeSplash = false;
 
-function SplashScreen() {
+const SPLASH_MAX_MS = 900;
+const SPLASH_MIN_VISIBLE_MS = 360;
+const SPLASH_AFTER_LOAD_MS = 90;
+
+function SplashScreen({ onLogoReady }: { onLogoReady: () => void }) {
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-[#111111] text-white">
       <div className="flex w-full max-w-md flex-col items-center px-6">
         {/* Logo */}
         <div className="mb-8 text-center">
           <div className="inline-flex flex-col items-center gap-2">
-            <BrandLogo size="splash" fetchPriority="high" />
+            <BrandLogo
+              size="splash"
+              fetchPriority="high"
+              decoding="sync"
+              onLoad={onLogoReady}
+              onError={onLogoReady}
+            />
             <div className="text-center text-2xl font-medium leading-tight tracking-[0.12em] font-heading">
               <span className="block">MARCELO PONZIO</span>
               <span className="mt-1 block text-lg tracking-[0.2em]">ESTILISTA</span>
@@ -182,23 +192,49 @@ function HomeContent() {
 
 export default function Home() {
   const [showSplash, setShowSplash] = useState(!hasShownHomeSplash);
+  const maxTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const dismissedRef = useRef(false);
+  const openedAtRef = useRef(0);
+
+  const dismissSplash = useCallback(() => {
+    if (dismissedRef.current) return;
+    dismissedRef.current = true;
+    if (maxTimerRef.current !== null) {
+      clearTimeout(maxTimerRef.current);
+      maxTimerRef.current = null;
+    }
+    hasShownHomeSplash = true;
+    setShowSplash(false);
+  }, []);
+
+  useLayoutEffect(() => {
+    if (hasShownHomeSplash || !showSplash) return;
+    openedAtRef.current = Date.now();
+  }, [showSplash]);
 
   useEffect(() => {
     if (hasShownHomeSplash) {
       setShowSplash(false);
       return;
     }
+    if (!showSplash) return;
+    maxTimerRef.current = setTimeout(dismissSplash, SPLASH_MAX_MS);
+    return () => {
+      if (maxTimerRef.current !== null) {
+        clearTimeout(maxTimerRef.current);
+        maxTimerRef.current = null;
+      }
+    };
+  }, [showSplash, dismissSplash]);
 
-    const timeout = setTimeout(() => {
-      hasShownHomeSplash = true;
-      setShowSplash(false);
-    }, 2000);
-
-    return () => clearTimeout(timeout);
-  }, []);
+  const handleSplashLogoReady = useCallback(() => {
+    const elapsed = Date.now() - openedAtRef.current;
+    const wait = Math.max(SPLASH_AFTER_LOAD_MS, SPLASH_MIN_VISIBLE_MS - elapsed);
+    window.setTimeout(dismissSplash, wait);
+  }, [dismissSplash]);
 
   if (showSplash) {
-    return <SplashScreen />;
+    return <SplashScreen onLogoReady={handleSplashLogoReady} />;
   }
 
   return <HomeContent />;

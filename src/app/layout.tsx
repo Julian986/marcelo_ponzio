@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Montserrat, Playfair_Display } from "next/font/google";
+import { BRAND_LOGO_SRC } from "@/components/brand-logo";
 import { HOME_HERO_IMAGE_URL } from "@/lib/home-hero-image";
 import "./globals.css";
 
@@ -29,6 +30,7 @@ export default function RootLayout({
   return (
     <html lang="es">
       <head>
+        <link rel="preload" href={BRAND_LOGO_SRC} as="image" />
         <link rel="preload" href={HOME_HERO_IMAGE_URL} as="image" />
       </head>
       <body
