@@ -3,8 +3,12 @@
 :root {
   --background: #111111;
   --foreground: #ffffff;
-  --soft-gray: #e5e5e5;
-  --premium-gold: #c9a96a;
+  --soft-gray: #9797a0;
+  --premium-gold: #e4ca69;
+  --accent-coral: #b64b54;
+  --accent-orange: #ce7832;
+  /* Texto sobre botones rellenos en tono dorado */
+  --on-accent: #1f1814;
 }
 
 @theme inline {
@@ -12,6 +16,8 @@
   --color-foreground: var(--foreground);
   --color-soft-gray: var(--soft-gray);
   --color-premium-gold: var(--premium-gold);
+  --color-accent-coral: var(--accent-coral);
+  --color-accent-orange: var(--accent-orange);
 }
 
 body {

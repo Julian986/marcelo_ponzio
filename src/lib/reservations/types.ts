@@ -1,4 +1,7 @@
 import type { ObjectId } from "mongodb";
+import type { TreatmentCategory } from "@/lib/treatments/catalog";
+
+export type { TreatmentCategory };
 
 /** Estados de la reserva en ciclo de vida operativo */
 export type ReservationStatus =
@@ -10,8 +13,6 @@ export type ReservationStatus =
 
 /** Estado del cobro de seña / total (Mercado Pago) */
 export type PaymentStatus = "not_required" | "pending" | "simulated_paid" | "approved" | "failed" | "refunded";
-
-export type TreatmentCategory = "Láser" | "Facial" | "Corporal";
 
 export type ReservationDoc = {
   _id: ObjectId;

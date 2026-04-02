@@ -4,17 +4,19 @@ import {
   CalendarDays,
   ChevronLeft,
   ChevronRight,
-  Dumbbell,
   Hand,
   MessageCircle,
+  Palette,
   Plus,
-  ScanFace,
+  Scissors,
   Sparkles,
   User,
 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
+
+import { panelDurationLabel } from "@/lib/treatments/catalog";
 
 export type PanelReservation = {
   id: string;
@@ -106,13 +108,6 @@ function dayLongFromKey(dateKey: string) {
   return new Intl.DateTimeFormat("es-AR", { day: "numeric", month: "long" }).format(dt);
 }
 
-function durationLabel(category: string) {
-  if (category === "Láser") return "45–60 min";
-  if (category === "Facial") return "60 min";
-  if (category === "Corporal") return "50 min";
-  return "Turno";
-}
-
 function digitsOnlyPhone(s: string) {
   return s.replace(/\D/g, "");
 }
@@ -141,9 +136,12 @@ function whatsAppChatUrl(
 
 function ServiceIcon({ category }: { category: string }) {
   const cls = "h-5 w-5 shrink-0 text-[var(--premium-gold)]";
+  if (category === "Cortes y peinado") return <Scissors className={cls} strokeWidth={1.85} />;
+  if (category === "Color") return <Palette className={cls} strokeWidth={1.85} />;
+  if (category === "Tratamiento") return <Sparkles className={cls} strokeWidth={1.85} />;
   if (category === "Láser") return <Sparkles className={cls} strokeWidth={1.85} />;
-  if (category === "Facial") return <ScanFace className={cls} strokeWidth={1.85} />;
-  if (category === "Corporal") return <Dumbbell className={cls} strokeWidth={1.85} />;
+  if (category === "Facial") return <Hand className={cls} strokeWidth={1.85} />;
+  if (category === "Corporal") return <Hand className={cls} strokeWidth={1.85} />;
   return <Hand className={cls} strokeWidth={1.85} />;
 }
 
@@ -269,12 +267,12 @@ export function PanelTurnosDashboard() {
       <div className="mx-auto max-w-md px-4">
         <header className="flex items-start justify-between gap-4 pt-6 pb-1">
           <div className="flex items-center gap-3">
-            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-[#b89253] to-[#e2cb9a] shadow-[0_10px_28px_rgba(201,169,106,0.22)]">
-              <Sparkles className="h-6 w-6 text-[#1a150c]" strokeWidth={2} />
+            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-[var(--accent-orange)] to-[var(--premium-gold)] shadow-[0_10px_28px_rgba(228,202,105,0.28)]">
+              <Sparkles className="h-6 w-6 text-[var(--on-accent)]" strokeWidth={2} />
             </div>
             <div>
               <h1 className="font-heading text-[18px] leading-tight text-[var(--premium-gold)]">Marcelo Ponzio Estilista</h1>
-              <p className="text-[12px] leading-relaxed text-[var(--soft-gray)]/58">Centro de Estética</p>
+              <p className="text-[12px] leading-relaxed text-[var(--soft-gray)]/58">Peluquería</p>
             </div>
           </div>
           <Link
@@ -335,7 +333,7 @@ export function PanelTurnosDashboard() {
                       "flex h-9 w-9 items-center justify-center rounded-full text-[14px] font-semibold leading-none transition",
                       inMonth ? "text-[var(--soft-gray)]" : "text-[var(--soft-gray)]/30",
                       sel
-                        ? "bg-gradient-to-br from-[#b89253] to-[#d4b777] text-[#1a150c] shadow-[0_8px_24px_rgba(201,169,106,0.28)]"
+                        ? "bg-gradient-to-br from-[var(--accent-coral)] to-[var(--accent-orange)] text-white shadow-[0_8px_24px_rgba(182,75,84,0.35)]"
                         : "hover:bg-white/5",
                     ].join(" ")}
                   >
@@ -390,7 +388,9 @@ export function PanelTurnosDashboard() {
                 <div className="flex gap-3">
                   <div className="w-[52px] shrink-0 text-left">
                     <p className="text-[15px] font-bold leading-none text-[var(--soft-gray)]">{r.timeLocal}</p>
-                    <p className="mt-2 text-[11px] leading-none text-[var(--soft-gray)]/48">{durationLabel(r.category)}</p>
+                    <p className="mt-2 text-[11px] leading-none text-[var(--soft-gray)]/48">
+                {panelDurationLabel(r.treatmentName, r.category)}
+              </p>
                   </div>
                   <div className="min-w-0 flex-1">
                     <div className="flex gap-2">

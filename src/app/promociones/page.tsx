@@ -4,9 +4,10 @@ import { CalendarDays, Home as HomeIcon, Percent, Sparkles, User } from "lucide-
 import Link from "next/link";
 import { useMemo, useState } from "react";
 
-import { LaserPromoEnganche } from "@/components/laser-promo-enganche";
-
-type PromoCategory = "Láser" | "Facial" | "Cejas" | "Corporal";
+import {
+  TREATMENT_CATEGORIES,
+  type TreatmentCategory,
+} from "@/lib/treatments/catalog";
 
 type Promo = {
   id: string;
@@ -14,70 +15,50 @@ type Promo = {
   subtitle: string;
   details: string;
   imageUrl: string;
-  category: PromoCategory;
+  category: TreatmentCategory;
 };
-
-const promoCategories: PromoCategory[] = ["Láser", "Facial", "Cejas", "Corporal"];
 
 const promos: Promo[] = [
   {
-    id: "glow-facial",
-    title: "Glow Facial",
-    subtitle: "Limpieza profunda",
-    details: "Limpieza profunda + Dermapen.",
+    id: "servicio-completo",
+    title: "Servicio completo",
+    subtitle: "Color + lavado + corte + peinado",
+    details: "1 h 30 min · Todo en una visita.",
     imageUrl:
-      "https://images.unsplash.com/photo-1515377905703-c4788e51af15?auto=format&fit=crop&w=900&q=80",
-    category: "Facial",
+      "https://images.unsplash.com/photo-1560066987-138a9a6e6fd4?auto=format&fit=crop&w=900&q=80",
+    category: "Cortes y peinado",
   },
   {
-    id: "promo-laser",
-    title: "Promo Láser",
-    subtitle: "Pack depilación",
-    details: "Cavado completo + tira + axilas.",
+    id: "balayage-promo",
+    title: "Balayage",
+    subtitle: "Luz natural",
+    details: "2 h · Consultá tonos y mantenimiento.",
     imageUrl:
-      "https://images.unsplash.com/photo-1544161515-4ab6ce6db874?auto=format&fit=crop&w=900&q=80",
-    category: "Láser",
+      "https://images.unsplash.com/photo-1633681926022-84c122e8b9d3?auto=format&fit=crop&w=900&q=80",
+    category: "Color",
   },
   {
-    id: "dermapen-combo",
-    title: "Dermapen",
-    subtitle: "Renovación celular",
-    details: "Dermapen + activos reparadores.",
+    id: "keratina-promo",
+    title: "Keratina",
+    subtitle: "Brillo y alisado",
+    details: "1 h · Incluye peinado.",
     imageUrl:
-      "https://images.unsplash.com/photo-1570172619644-dfd03ed5d881?auto=format&fit=crop&w=900&q=80",
-    category: "Facial",
+      "https://images.unsplash.com/photo-1519699047748-de8e457a634e?auto=format&fit=crop&w=900&q=80",
+    category: "Tratamiento",
   },
   {
-    id: "exosomas-plus",
-    title: "Exosomas",
-    subtitle: "Piel revitalizada",
-    details: "Exosomas + máscara calmante.",
+    id: "corte-dama-promo",
+    title: "Corte Dama",
+    subtitle: "Estilo y forma",
+    details: "30 min · Lavado incluido.",
     imageUrl:
-      "https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?auto=format&fit=crop&w=900&q=80",
-    category: "Facial",
-  },
-  {
-    id: "cejas-design",
-    title: "Cejas Premium",
-    subtitle: "Diseño y perfilado",
-    details: "Diseño de cejas + visagismo.",
-    imageUrl:
-      "https://images.unsplash.com/photo-1521590832167-7bcbfaa6381f?auto=format&fit=crop&w=900&q=80",
-    category: "Cejas",
-  },
-  {
-    id: "corporal-shape",
-    title: "Corporal Shape",
-    subtitle: "Modelado corporal",
-    details: "Cavitación + drenaje linfático.",
-    imageUrl:
-      "https://images.unsplash.com/photo-1556229010-aa3f7ff66b24?auto=format&fit=crop&w=900&q=80",
-    category: "Corporal",
+      "https://images.unsplash.com/photo-1562322140-8baeececf3df?auto=format&fit=crop&w=900&q=80",
+    category: "Cortes y peinado",
   },
 ];
 
 export default function PromotionsPage() {
-  const [activeCategory, setActiveCategory] = useState<PromoCategory>("Láser");
+  const [activeCategory, setActiveCategory] = useState<TreatmentCategory>("Cortes y peinado");
 
   const filteredPromos = useMemo(
     () => promos.filter((promo) => promo.category === activeCategory),
@@ -92,7 +73,7 @@ export default function PromotionsPage() {
         </header>
 
         <section className="mb-4 flex items-center gap-2 overflow-x-auto pb-1">
-          {promoCategories.map((category) => {
+          {TREATMENT_CATEGORIES.map((category) => {
             const isActive = category === activeCategory;
             return (
               <button
@@ -109,8 +90,6 @@ export default function PromotionsPage() {
             );
           })}
         </section>
-
-        {activeCategory === "Láser" ? <LaserPromoEnganche /> : null}
 
         <section className="space-y-3">
           {filteredPromos.map((promo) => (
@@ -135,7 +114,7 @@ export default function PromotionsPage() {
                 <div className="mt-auto pt-2">
                   <Link
                     href={`/turnos?treatment=${encodeURIComponent(promo.title)}`}
-                    className="flex h-8 w-full items-center justify-center rounded-full bg-gradient-to-r from-[#b89253] to-[#e2cb9a] text-[13px] font-medium text-white"
+                    className="flex h-8 w-full items-center justify-center rounded-full bg-gradient-to-r from-[var(--accent-orange)] to-[var(--premium-gold)] text-[13px] font-medium text-white"
                   >
                     Reservar
                   </Link>
@@ -154,11 +133,9 @@ export default function PromotionsPage() {
               Inicio
             </span>
           </Link>
-          <Link href="/tratamientos" className="flex min-w-0 flex-1 flex-col items-center gap-1">
+          <Link href="/tratamientos" className="flex min-w-0 flex-1 flex-col items-center gap-1 text-[var(--soft-gray)]/80">
             <Sparkles className="h-5 w-5 text-[var(--soft-gray)]/90" strokeWidth={1.8} />
-            <span className="text-[9px] tracking-[0.12em] text-[var(--soft-gray)]/80">
-              Tratamientos
-            </span>
+            <span className="text-[9px] tracking-[0.12em]">Tratamientos</span>
           </Link>
           <Link href="/turnos" className="flex min-w-0 flex-1 flex-col items-center gap-1 text-[var(--soft-gray)]/80">
             <CalendarDays className="h-5 w-5 text-[var(--soft-gray)]/90" strokeWidth={1.8} />
@@ -166,9 +143,7 @@ export default function PromotionsPage() {
           </Link>
           <Link href="/promociones" className="flex min-w-0 flex-1 flex-col items-center gap-1">
             <Percent className="h-5 w-5 text-[var(--premium-gold)]" strokeWidth={1.8} />
-            <span className="text-[9px] tracking-[0.12em] text-[var(--premium-gold)]">
-              Promos
-            </span>
+            <span className="text-[9px] tracking-[0.12em] text-[var(--premium-gold)]">Promos</span>
           </Link>
           <Link href="/perfil" className="flex min-w-0 flex-1 flex-col items-center gap-1 text-[var(--soft-gray)]/80">
             <User className="h-5 w-5 text-[var(--soft-gray)]/90" strokeWidth={1.8} />

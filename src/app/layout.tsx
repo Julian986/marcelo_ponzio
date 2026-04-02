@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Montserrat, Playfair_Display } from "next/font/google";
+import { HOME_HERO_IMAGE_URL } from "@/lib/home-hero-image";
 import "./globals.css";
 
 const montserrat = Montserrat({
@@ -17,7 +18,7 @@ const playfair = Playfair_Display({
 export const metadata: Metadata = {
   title: "Marcelo Ponzio Estilista",
   description:
-    "Belleza, tecnología y cuidado profesional en un solo lugar. Reservá tus tratamientos estéticos en Marcelo Ponzio Estilista.",
+    "Peluquería y estilismo en Bahía Blanca. Color, corte, peinado y tratamientos capilares. Reservá tu turno en Marcelo Ponzio Estilista.",
 };
 
 export default function RootLayout({
@@ -25,13 +26,10 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const heroImageUrl =
-    "https://res.cloudinary.com/dzoupwn0e/image/upload/v1773419875/fondo_home_3_q3kumw.webp";
-
   return (
     <html lang="es">
       <head>
-        <link rel="preload" href={heroImageUrl} as="image" />
+        <link rel="preload" href={HOME_HERO_IMAGE_URL} as="image" />
       </head>
       <body
         className={`${montserrat.variable} ${playfair.variable} min-h-screen bg-[#111111] text-white antialiased`}

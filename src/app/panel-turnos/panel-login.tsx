@@ -36,8 +36,8 @@ export function PanelLogin() {
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-[#111111] px-4 pb-20 pt-8 text-white">
       <div className="mb-8 flex flex-col items-center gap-3 text-center">
-        <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-[#b89253] to-[#e2cb9a] shadow-[0_10px_30px_rgba(201,169,106,0.25)]">
-          <Sparkles className="h-7 w-7 text-[#1a150c]" strokeWidth={2} />
+        <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-[var(--accent-orange)] to-[var(--premium-gold)] shadow-[0_10px_30px_rgba(228,202,105,0.28)]">
+          <Sparkles className="h-7 w-7 text-[var(--on-accent)]" strokeWidth={2} />
         </div>
         <h1 className="font-heading text-[28px] text-[var(--premium-gold)]">Panel de turnos</h1>
         <p className="max-w-xs text-[14px] text-[var(--soft-gray)]/78">
@@ -69,7 +69,7 @@ export function PanelLogin() {
         <button
           type="submit"
           disabled={loading || !password}
-          className="mt-5 h-[52px] w-full rounded-full bg-gradient-to-r from-[#b89253] to-[#e2cb9a] text-[16px] font-heading text-white shadow-[0_0_24px_rgba(201,169,106,0.22)] disabled:opacity-45"
+          className="mt-5 h-[52px] w-full rounded-full bg-gradient-to-r from-[var(--accent-orange)] to-[var(--premium-gold)] text-[16px] font-heading text-white shadow-[0_0_24px_rgba(228,202,105,0.28)] disabled:opacity-45"
         >
           {loading ? "Ingresando…" : "Entrar"}
         </button>

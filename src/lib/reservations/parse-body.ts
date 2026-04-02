@@ -1,7 +1,8 @@
+import { TREATMENT_CATEGORIES } from "@/lib/treatments/catalog";
 import type { CreateReservationInput, TreatmentCategory } from "./types";
 
 function isCategory(v: unknown): v is TreatmentCategory {
-  return v === "Láser" || v === "Facial" || v === "Corporal";
+  return typeof v === "string" && (TREATMENT_CATEGORIES as readonly string[]).includes(v);
 }
 
 function digitsOnly(s: string) {

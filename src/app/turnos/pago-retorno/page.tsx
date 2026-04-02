@@ -75,7 +75,7 @@ function PagoRetornoContent() {
         <div className="flex flex-col gap-3">
           <Link
             href="/turnos"
-            className="flex h-12 items-center justify-center rounded-full bg-gradient-to-r from-[#b89253] to-[#e2cb9a] text-[16px] font-heading text-white"
+            className="flex h-12 items-center justify-center rounded-full bg-gradient-to-r from-[var(--accent-orange)] to-[var(--premium-gold)] text-[16px] font-heading text-white"
           >
             Volver a Turnos
           </Link>

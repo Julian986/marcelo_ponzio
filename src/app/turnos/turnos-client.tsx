@@ -12,7 +12,11 @@ import {
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
-type TreatmentCategory = "Láser" | "Facial" | "Corporal";
+import {
+  SALON_TREATMENTS,
+  TREATMENT_CATEGORIES,
+  type TreatmentCategory,
+} from "@/lib/treatments/catalog";
 
 type TreatmentOption = {
   id: string;
@@ -29,94 +33,14 @@ type CalendarItem = {
   isAvailable: boolean;
 };
 
-const treatmentCategories: TreatmentCategory[] = ["Láser", "Facial", "Corporal"];
+const treatmentCategories: TreatmentCategory[] = [...TREATMENT_CATEGORIES];
 
-const treatmentOptions: TreatmentOption[] = [
-  {
-    id: "depilacion-laser",
-    name: "Depilación Láser",
-    subtitle: "Soprano Titanium · 4 ondas de profundidad",
-    category: "Láser",
-  },
-  {
-    id: "limpieza-facial-profunda",
-    name: "Limpieza Facial Profunda",
-    subtitle: "Higiene, extracción y renovación",
-    category: "Facial",
-  },
-  {
-    id: "dermapen",
-    name: "Dermapen",
-    subtitle: "Renovación y glow",
-    category: "Facial",
-  },
-  {
-    id: "exosomas",
-    name: "Exosomas",
-    subtitle: "Reparación intensiva",
-    category: "Facial",
-  },
-  {
-    id: "radiofrecuencia-facial",
-    name: "Radiofrecuencia Facial",
-    subtitle: "Reafirmación no invasiva",
-    category: "Facial",
-  },
-  {
-    id: "alta-frecuencia",
-    name: "Alta Frecuencia",
-    subtitle: "Oxigenación y equilibrio",
-    category: "Facial",
-  },
-  {
-    id: "electroporacion",
-    name: "Electroporación",
-    subtitle: "Vehiculización de activos",
-    category: "Facial",
-  },
-  {
-    id: "radiofrecuencia-corporal",
-    name: "Radiofrecuencia Corporal",
-    subtitle: "Reafirmación y tonicidad",
-    category: "Corporal",
-  },
-  {
-    id: "cavitacion",
-    name: "Cavitación",
-    subtitle: "Modelado corporal",
-    category: "Corporal",
-  },
-  {
-    id: "drenaje-linfatico",
-    name: "Drenaje Linfático",
-    subtitle: "Desinflamación y circulación",
-    category: "Corporal",
-  },
-  {
-    id: "maderoterapia",
-    name: "Maderoterapia",
-    subtitle: "Moldeado y firmeza",
-    category: "Corporal",
-  },
-  {
-    id: "masajes-reductores",
-    name: "Masajes Reductores",
-    subtitle: "Trabajo focalizado",
-    category: "Corporal",
-  },
-  {
-    id: "electroestimulador",
-    name: "Electroestimulador",
-    subtitle: "Tonificación muscular",
-    category: "Corporal",
-  },
-  {
-    id: "endermologie",
-    name: "Endermologie",
-    subtitle: "Estimulación mecánica",
-    category: "Corporal",
-  },
-];
+const treatmentOptions: TreatmentOption[] = SALON_TREATMENTS.map((t) => ({
+  id: t.id,
+  name: t.name,
+  subtitle: t.subtitle,
+  category: t.category,
+}));
 
 const availableTimesByWeekday: Record<number, string[]> = {
   1: ["08:00", "09:00", "10:00", "11:00", "15:00", "16:00", "17:00"],
@@ -230,8 +154,15 @@ type TurnosClientProps = {
 };
 
 export default function TurnosClient({ initialTreatment = "" }: TurnosClientProps) {
+  const treatmentParam = (() => {
+    try {
+      return decodeURIComponent(initialTreatment.trim());
+    } catch {
+      return initialTreatment.trim();
+    }
+  })();
   const initialMatch = treatmentOptions.find(
-    (option) => option.id === initialTreatment || option.name === initialTreatment,
+    (option) => option.id === treatmentParam || option.name === treatmentParam,
   );
 
   const [selectedTreatmentId, setSelectedTreatmentId] = useState<string>(initialMatch?.id ?? "");
@@ -444,14 +375,14 @@ export default function TurnosClient({ initialTreatment = "" }: TurnosClientProp
             onClick={openTreatmentModal}
             className={`flex w-full items-center justify-between rounded-2xl border bg-[#171717] px-4 py-3 text-left transition-all ${
               activeStep === 1
-                ? "border-[var(--premium-gold)] shadow-[0_0_0_1px_rgba(201,169,106,0.2),0_0_22px_rgba(201,169,106,0.16)]"
+                ? "border-[var(--premium-gold)] shadow-[0_0_0_1px_rgba(228,202,105,0.22),0_0_22px_rgba(206,120,50,0.18)]"
                 : "border-white/8"
             }`}
           >
             <div>
               <p className="text-[11px] tracking-[0.14em] text-[var(--soft-gray)]/55">Paso 1</p>
               <p className="mt-1 text-[14px] text-[var(--soft-gray)]">
-                {selectedTreatment ? selectedTreatment.name : "Elegí tratamiento"}
+                {selectedTreatment ? selectedTreatment.name : "Elegí servicio"}
               </p>
               {selectedTreatment && (
                 <p className="mt-1 text-[11px] text-[var(--soft-gray)]/55">
@@ -471,7 +402,7 @@ export default function TurnosClient({ initialTreatment = "" }: TurnosClientProp
           <div
             className={`flex items-center justify-between rounded-2xl border bg-[#171717] px-4 py-3 transition-all ${
               activeStep === 2
-                ? "border-[var(--premium-gold)] shadow-[0_0_0_1px_rgba(201,169,106,0.2),0_0_22px_rgba(201,169,106,0.16)]"
+                ? "border-[var(--premium-gold)] shadow-[0_0_0_1px_rgba(228,202,105,0.22),0_0_22px_rgba(206,120,50,0.18)]"
                 : "border-white/8"
             }`}
           >
@@ -524,7 +455,7 @@ export default function TurnosClient({ initialTreatment = "" }: TurnosClientProp
               aria-live="polite"
               className="mb-2 rounded-xl border border-[#8a7548]/55 bg-[#fff9ec]/97 px-3 py-2.5 text-center text-[12px] leading-snug text-[#2c241b] shadow-[inset_0_1px_0_rgba(255,255,255,0.65)]"
             >
-              <span className="font-semibold">Primero elegí un tratamiento</span>
+              <span className="font-semibold">Primero elegí un servicio</span>
               <span className="text-[#3b3224]"> (paso 1) para poder elegir el día.</span>
             </p>
           ) : null}
@@ -580,7 +511,7 @@ export default function TurnosClient({ initialTreatment = "" }: TurnosClientProp
           <div
             className={`flex items-center justify-between rounded-2xl border bg-[#171717] px-4 py-3 transition-all ${
               activeStep === 3
-                ? "border-[var(--premium-gold)] shadow-[0_0_0_1px_rgba(201,169,106,0.2),0_0_22px_rgba(201,169,106,0.16)]"
+                ? "border-[var(--premium-gold)] shadow-[0_0_0_1px_rgba(228,202,105,0.22),0_0_22px_rgba(206,120,50,0.18)]"
                 : "border-white/8"
             }`}
           >
@@ -610,7 +541,7 @@ export default function TurnosClient({ initialTreatment = "" }: TurnosClientProp
                     onClick={() => setSelectedTime(time)}
                     className={`h-11 rounded-xl border text-[16px] transition-colors ${
                       isActive
-                        ? "border-[var(--premium-gold)] bg-[#2a2318] text-[var(--premium-gold)]"
+                        ? "border-[var(--premium-gold)] bg-[rgba(206,120,50,0.14)] text-[var(--premium-gold)]"
                         : "border-white/8 bg-[#151515] text-[var(--soft-gray)]"
                     }`}
                   >
@@ -631,7 +562,7 @@ export default function TurnosClient({ initialTreatment = "" }: TurnosClientProp
             <section
               className={`rounded-2xl border bg-[#171717] px-4 py-4 transition-all ${
                 activeStep === 4
-                  ? "border-[var(--premium-gold)] shadow-[0_0_0_1px_rgba(201,169,106,0.2),0_0_22px_rgba(201,169,106,0.16)]"
+                  ? "border-[var(--premium-gold)] shadow-[0_0_0_1px_rgba(228,202,105,0.22),0_0_22px_rgba(206,120,50,0.18)]"
                   : "border-white/8"
               }`}
             >
@@ -720,7 +651,7 @@ export default function TurnosClient({ initialTreatment = "" }: TurnosClientProp
               ref={paymentSectionRef}
               className={`rounded-2xl border bg-[#171717] px-4 py-4 transition-all ${
                 activeStep === 5
-                  ? "border-[var(--premium-gold)] shadow-[0_0_0_1px_rgba(201,169,106,0.2),0_0_22px_rgba(201,169,106,0.16)]"
+                  ? "border-[var(--premium-gold)] shadow-[0_0_0_1px_rgba(228,202,105,0.22),0_0_22px_rgba(206,120,50,0.18)]"
                   : "border-white/8"
               }`}
             >
@@ -808,7 +739,7 @@ export default function TurnosClient({ initialTreatment = "" }: TurnosClientProp
         <div className="fixed inset-0 z-40 flex items-end bg-black/60 backdrop-blur-[3px]">
           <button
             type="button"
-            aria-label="Cerrar selector de tratamiento"
+            aria-label="Cerrar selector de servicio"
             onClick={closeTreatmentModal}
             className="absolute inset-0"
           />
@@ -831,7 +762,7 @@ export default function TurnosClient({ initialTreatment = "" }: TurnosClientProp
               )}
 
               <h2 className="text-[26px] leading-none font-heading">
-                {activeTreatmentCategory ?? "Elegí tratamiento"}
+                {activeTreatmentCategory ?? "Elegí servicio"}
               </h2>
 
               <button
@@ -855,7 +786,7 @@ export default function TurnosClient({ initialTreatment = "" }: TurnosClientProp
                       onClick={() => selectTreatment(treatment.id)}
                       className={`w-full rounded-2xl border px-4 py-3 text-left transition-colors ${
                         isSelected
-                          ? "border-[var(--premium-gold)] bg-[#241d12]"
+                          ? "border-[var(--premium-gold)] bg-[rgba(228,202,105,0.1)]"
                           : "border-white/8 bg-[#1c1c1c]"
                       }`}
                     >
@@ -883,7 +814,7 @@ export default function TurnosClient({ initialTreatment = "" }: TurnosClientProp
                         {category}
                       </p>
                       <p className="mt-1 text-[12px] text-[var(--soft-gray)]/58">
-                        {treatmentOptions.filter((option) => option.category === category).length} tratamientos
+                        {treatmentOptions.filter((option) => option.category === category).length} servicios
                       </p>
                     </div>
                     <ChevronRight className="h-4 w-4 text-[var(--soft-gray)]/55" strokeWidth={1.8} />

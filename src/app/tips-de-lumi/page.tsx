@@ -1,5 +1,6 @@
 "use client";
 
+import { BrandLogo } from "@/components/brand-logo";
 import { CalendarDays, Home as HomeIcon, Percent, Sparkles, User } from "lucide-react";
 import Link from "next/link";
 import { useRef, useState } from "react";
@@ -74,12 +75,7 @@ export default function TipsDeLumiPage() {
     <div className="min-h-screen bg-[#111111] text-white">
       <main className="mx-auto w-full max-w-md px-4 pt-6 pb-24">
         <header className="mb-2 text-center">
-          <img
-            src="/corona%20svg.svg"
-            alt=""
-            aria-hidden="true"
-            className="mx-auto mt-3 mb-[-0.75rem] h-14 w-28 object-contain"
-          />
+          <BrandLogo size="page" className="mx-auto mt-3 mb-[-0.5rem]" />
           <div
             className="mx-auto mt-6 h-[1px] w-36"
             style={{

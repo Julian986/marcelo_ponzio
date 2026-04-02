@@ -1,5 +1,6 @@
 "use client";
 
+import { BrandLogo } from "@/components/brand-logo";
 import { CalendarDays, Home as HomeIcon, Percent, Sparkles, User } from "lucide-react";
 import Link from "next/link";
 import { useMemo, useState } from "react";
@@ -131,13 +132,13 @@ export default function BeforeAfterPage() {
       <main className="mx-auto w-full max-w-md px-4 pt-5 pb-24">
         <header className="mb-3 flex items-center justify-center px-1">
           <div className="text-center">
-            <img src="/corona%20svg.svg" alt="" aria-hidden="true" className="mx-auto h-14 w-28 object-contain" />
+            <BrandLogo size="page" className="mx-auto" />
             <h1 className="mt-1 text-center text-[26px] leading-tight font-heading tracking-wide">
               <span className="block">MARCELO PONZIO</span>
               <span className="mt-0.5 block text-[22px]">ESTILISTA</span>
             </h1>
             <p className="mt-0.5 text-[9px] tracking-[0.16em] text-[var(--soft-gray)]/90">
-              Láser & Treatments
+              Color · Corte · Peinado
             </p>
           </div>
         </header>
@@ -220,7 +221,7 @@ export default function BeforeAfterPage() {
                 </div>
               </div>
 
-              <button className="mt-3 h-10 w-full rounded-full bg-gradient-to-r from-[#b89253] to-[#e2cb9a] text-[20px] leading-none font-heading text-white">
+              <button className="mt-3 h-10 w-full rounded-full bg-gradient-to-r from-[var(--accent-orange)] to-[var(--premium-gold)] text-[20px] leading-none font-heading text-white">
                 Comprar pack
               </button>
             </div>

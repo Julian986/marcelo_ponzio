@@ -1,16 +1,6 @@
+import { BrandLogo } from "@/components/brand-logo";
 import { CalendarDays, CalendarPlus2, Home as HomeIcon, Percent, Sparkles, User } from "lucide-react";
 import Link from "next/link";
-
-function CrownLogo() {
-  return (
-    <img
-      src="/corona%20svg.svg"
-      alt=""
-      aria-hidden="true"
-      className="mx-auto h-14 w-28 object-contain"
-    />
-  );
-}
 
 type ConfirmPageProps = {
   searchParams?: Promise<{
@@ -26,7 +16,7 @@ type ConfirmPageProps = {
 
 export default async function TurnoConfirmadoPage({ searchParams }: ConfirmPageProps) {
   const params = (await searchParams) ?? {};
-  const treatment = params.treatment ?? "Dermapen";
+  const treatment = params.treatment ?? "Corte Dama";
   const subtitle = params.subtitle ?? "Sesión premium";
   const date = params.date ?? "Jueves, 26 abr";
   const time = params.time ?? "15:00";
@@ -38,7 +28,7 @@ export default async function TurnoConfirmadoPage({ searchParams }: ConfirmPageP
     <div className="min-h-screen bg-[#111111] text-white">
       <main className="mx-auto w-full max-w-md px-4 pt-6 pb-24">
         <header className="mb-6 text-center">
-          <CrownLogo />
+          <BrandLogo size="compact" className="mx-auto" />
         </header>
 
         <section className="rounded-[28px] border border-white/8 bg-[#171717] px-5 py-6 shadow-[0_18px_40px_rgba(0,0,0,0.45)]">
@@ -93,7 +83,7 @@ export default async function TurnoConfirmadoPage({ searchParams }: ConfirmPageP
 
           <button
             type="button"
-            className="mt-6 flex h-[52px] w-full items-center justify-center gap-2 rounded-full bg-gradient-to-r from-[#b89253] to-[#e2cb9a] text-[19px] font-heading text-white"
+            className="mt-6 flex h-[52px] w-full items-center justify-center gap-2 rounded-full bg-gradient-to-r from-[var(--accent-orange)] to-[var(--premium-gold)] text-[19px] font-heading text-white"
           >
             <CalendarPlus2 className="h-5 w-5" strokeWidth={1.9} />
             Agregar al calendario

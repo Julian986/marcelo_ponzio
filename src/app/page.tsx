@@ -1,21 +1,12 @@
 "use client";
 
+import { BrandLogo } from "@/components/brand-logo";
+import { HOME_HERO_IMAGE_URL } from "@/lib/home-hero-image";
 import { CalendarDays, Home as HomeIcon, Percent, Sparkles, User } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 
 let hasShownHomeSplash = false;
-
-function CrownLogo() {
-  return (
-    <img
-      src="/corona%20svg.svg"
-      alt=""
-      aria-hidden="true"
-      className="h-9 w-[4.5rem] object-contain"
-    />
-  );
-}
 
 function SplashScreen() {
   return (
@@ -24,20 +15,20 @@ function SplashScreen() {
         {/* Logo */}
         <div className="mb-8 text-center">
           <div className="inline-flex flex-col items-center gap-2">
-            <CrownLogo />
+            <BrandLogo size="splash" fetchPriority="high" />
             <div className="text-center text-2xl font-medium leading-tight tracking-[0.12em] font-heading">
               <span className="block">MARCELO PONZIO</span>
               <span className="mt-1 block text-lg tracking-[0.2em]">ESTILISTA</span>
             </div>
             <div className="text-xs tracking-[0.25em] text-[var(--soft-gray)]/80">
-              Láser & Treatments
+              Color · Corte · Peinado
             </div>
           </div>
         </div>
 
         {/* Frase */}
         <p className="max-w-xs text-center text-sm leading-relaxed text-[var(--soft-gray)]">
-          Tecnología estética avanzada para cuidar y realzar tu belleza natural.
+          Asesoramiento y técnica profesional para que tu pelo luzca como vos querés.
         </p>
       </div>
     </div>
@@ -52,10 +43,9 @@ function HomeContent() {
         className="fixed top-0 right-0 left-0 z-0"
         style={{
           height: "100svh",
-          backgroundImage:
-            "url('https://res.cloudinary.com/dzoupwn0e/image/upload/v1773419875/fondo_home_3_q3kumw.webp')",
+          backgroundImage: `url('${HOME_HERO_IMAGE_URL}')`,
           backgroundSize: "cover",
-          backgroundPosition: "center 28%",
+          backgroundPosition: "center 35%",
           backgroundRepeat: "no-repeat",
         }}
       />
@@ -73,28 +63,24 @@ function HomeContent() {
       <main className="relative z-20 mx-auto min-h-screen w-full max-w-md px-5 pt-20 pb-28">
         <header className="flex justify-center">
           <div className="inline-flex flex-col items-center gap-1 text-center">
-            <CrownLogo />
+            <BrandLogo size="header" />
             <div className="text-center text-[22px] font-medium leading-tight tracking-[0.14em] text-white font-heading">
               <span className="block">MARCELO PONZIO</span>
               <span className="mt-0.5 block text-[19px] tracking-[0.18em]">ESTILISTA</span>
             </div>
             <div className="text-[11px] tracking-[0.28em] text-[var(--soft-gray)]/90">
-              Láser & Treatments
+              Color · Corte · Peinado
             </div>
           </div>
         </header>
 
         <div className="mt-[31vh] space-y-4">
           <section className="pb-1">
-            <h1 className="mx-auto mb-6 text-center text-[26px] font-normal leading-[1.28] text-white font-heading">
-              Belleza, tecnología
-              <br />
-              <span className="whitespace-nowrap">y cuidado profesional</span>
-            </h1>
+            <h1 className="sr-only">Marcelo Ponzio Estilista</h1>
             <div className="mx-auto flex w-[84%] flex-col gap-3">
               <Link
                 href="/turnos"
-                className="flex h-[52px] items-center justify-center rounded-full bg-[var(--premium-gold)] px-6 text-[16px] font-semibold tracking-[0.14em] text-[#1f1b16] shadow-[0_16px_36px_rgba(0,0,0,0.45)]"
+                className="flex h-[52px] items-center justify-center rounded-full bg-[var(--premium-gold)] px-6 text-[16px] font-semibold tracking-[0.14em] text-[var(--on-accent)] shadow-[0_16px_36px_rgba(0,0,0,0.45)]"
               >
                 Reservar turno
               </Link>
@@ -121,12 +107,6 @@ function HomeContent() {
               Antes y después
             </Link>
             <Link
-              href="/tips-de-lumi"
-              className="flex h-[52px] w-full items-center justify-center rounded-full border border-white/8 bg-black/45 px-6 text-[15px] font-medium tracking-[0.14em] text-white backdrop-blur-[10px]"
-            >
-              Tips de Marcelo Ponzio Estilista
-            </Link>
-            <Link
               href="/contacto"
               className="flex h-[52px] w-full items-center justify-center rounded-full border border-white/8 bg-black/45 px-6 text-[15px] font-medium tracking-[0.14em] text-white backdrop-blur-[10px]"
             >
@@ -140,18 +120,18 @@ function HomeContent() {
             </div>
             <div className="rounded-[28px] border border-white/8 bg-black/50 p-4 shadow-[0_18px_40px_rgba(0,0,0,0.4)] backdrop-blur-[14px]">
               <div className="text-[10px] tracking-[0.24em] text-[var(--premium-gold)]">
-                GLOW FACIAL
+                DESTACADO
               </div>
               <h2 className="mt-2 text-lg leading-tight text-white font-heading">
-                Limpieza profunda + Dermapen
+                Servicio completo
               </h2>
               <p className="mt-2 text-xs leading-relaxed text-[var(--soft-gray)]">
-                Lográ una piel luminosa, uniforme y libre de impurezas.
+                Color, lavado, corte y peinado en una sola visita (1 h 30 min).
               </p>
               <div className="mt-3 flex items-center justify-between gap-3">
                 <Link
-                  href="/turnos?treatment=Limpieza%20Facial"
-                  className="flex h-10 items-center justify-center rounded-full bg-[var(--premium-gold)] px-5 text-[12px] font-semibold tracking-[0.14em] text-[#1f1b16]"
+                  href="/turnos?treatment=Servicio%20completo"
+                  className="flex h-10 items-center justify-center rounded-full bg-[var(--premium-gold)] px-5 text-[12px] font-semibold tracking-[0.14em] text-[var(--on-accent)]"
                 >
                   Reservar ahora
                 </Link>

@@ -21,7 +21,7 @@ export function LaserPromoEnganche() {
 
   return (
     <section
-      className="mb-4 overflow-hidden rounded-[22px] border border-[var(--premium-gold)]/28 bg-gradient-to-br from-[#1f1a14] via-[#171717] to-[#141210] shadow-[0_14px_36px_rgba(0,0,0,0.42)]"
+      className="mb-4 overflow-hidden rounded-[22px] border border-[var(--premium-gold)]/28 bg-gradient-to-br from-[#1f1612] via-[#171717] to-[#141210] shadow-[0_14px_36px_rgba(0,0,0,0.42)]"
       aria-labelledby={showTextBlock ? "laser-enganche-title" : undefined}
       aria-label={!showTextBlock ? "Promo láser depilación definitiva" : undefined}
     >
@@ -80,7 +80,7 @@ export function LaserPromoEnganche() {
       <div className="flex flex-col gap-2 p-4 pt-3">
         <Link
           href="/turnos?treatment=depilacion-laser"
-          className="flex h-10 w-full items-center justify-center rounded-full bg-gradient-to-r from-[#b89253] to-[#e2cb9a] text-[14px] font-medium text-white shadow-[0_6px_20px_rgba(201,169,106,0.22)]"
+          className="flex h-10 w-full items-center justify-center rounded-full bg-gradient-to-r from-[var(--accent-orange)] to-[var(--premium-gold)] text-[14px] font-medium text-white shadow-[0_6px_20px_rgba(228,202,105,0.28)]"
         >
           Reservar turno
         </Link>
