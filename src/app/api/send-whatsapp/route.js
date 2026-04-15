@@ -4,14 +4,16 @@ import { getDb } from "@/lib/mongodb";
 import { getTwilioClient } from "@/lib/twilio";
 
 function normalizeTo(to) {
-  const digits = String(to ?? "").replace(/\D/g, "");
-  if (!digits) throw new Error("El campo 'to' es obligatorio");
+  // normaliza a +549 para celulares argentinos
+  let phone = String(to ?? "").replace(/\D/g, ""); // saca espacios
+  if (!phone) throw new Error("El campo 'to' es obligatorio");
+  if (phone.startsWith("549")) phone = phone;
+  else if (phone.startsWith("54")) phone = `549${phone.slice(2)}`;
+  else if (phone.startsWith("9")) phone = `54${phone}`;
+  else phone = `549${phone}`;
 
-  let local = digits;
-  if (local.startsWith("54")) local = local.slice(2);
-  if (local.startsWith("9")) local = local.slice(1);
-
-  return `whatsapp:+54${local}`;
+  const toWhatsApp = `whatsapp:+${phone}`;
+  return toWhatsApp;
 }
 
 function methodNotAllowed() {
