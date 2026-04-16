@@ -21,6 +21,8 @@ export type BookingPickerProps = {
   onDateChange: (dateKey: string) => void;
   selectedTime: string;
   onTimeChange: (time: string) => void;
+  /** Si se pasa, define qué horarios mostrar (ej. reserva pública con margen de 60 min en “hoy”). */
+  resolveTimeSlots?: (dateKey: string) => string[];
   bookingFocusRef?: React.RefObject<HTMLDivElement | null>;
   treatmentFirstHintVisible: boolean;
   onTreatmentFirstHintVisible: (visible: boolean) => void;
@@ -33,6 +35,7 @@ export function BookingPicker({
   onDateChange,
   selectedTime,
   onTimeChange,
+  resolveTimeSlots,
   bookingFocusRef,
   treatmentFirstHintVisible,
   onTreatmentFirstHintVisible,
@@ -61,7 +64,9 @@ export function BookingPicker({
   );
   const visibleMonthLabel = `${salonMonthNames[visibleMonthDate.getMonth()]} ${visibleMonthDate.getFullYear()}`;
 
-  const availableTimes = selectedDate ? getAvailableTimesForDate(selectedDate) : [];
+  const availableTimes = selectedDate
+    ? (resolveTimeSlots ? resolveTimeSlots(selectedDate) : getAvailableTimesForDate(selectedDate))
+    : [];
 
   const activeStep = !selectedTreatment
     ? 1

@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { BookingPicker } from "@/components/booking/booking-picker";
+import { getPublicBookableTimeSlots } from "@/lib/booking/public-slot-lead";
 import {
   SALON_TREATMENT_OPTIONS,
   formatSalonDisplayDate,
@@ -78,6 +79,14 @@ export default function TurnosClient({ initialTreatment = "" }: TurnosClientProp
   useEffect(() => {
     prevDatosCompleteRef.current = false;
   }, [selectedTreatmentId, selectedDate, selectedTime]);
+
+  useEffect(() => {
+    if (!selectedDate || !selectedTime) return;
+    const slots = getPublicBookableTimeSlots(selectedDate, new Date());
+    if (!slots.includes(selectedTime)) {
+      setSelectedTime("");
+    }
+  }, [selectedDate, selectedTime]);
 
   const scheduleScrollToPaymentSection = useCallback(() => {
     if (!hasSlot) return;
@@ -204,6 +213,7 @@ export default function TurnosClient({ initialTreatment = "" }: TurnosClientProp
           onDateChange={setSelectedDate}
           selectedTime={selectedTime}
           onTimeChange={setSelectedTime}
+          resolveTimeSlots={(dateKey) => getPublicBookableTimeSlots(dateKey, new Date())}
           bookingFocusRef={bookingFocusRef}
           treatmentFirstHintVisible={treatmentFirstHintVisible}
           onTreatmentFirstHintVisible={setTreatmentFirstHintVisible}

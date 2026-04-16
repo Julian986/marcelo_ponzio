@@ -1,6 +1,6 @@
 "use client";
 
-import { CalendarDays, Home as HomeIcon, Percent, Sparkles, User } from "lucide-react";
+import { CalendarDays, Home as HomeIcon, Palette, Percent, Scissors, Sparkles, User } from "lucide-react";
 import Link from "next/link";
 import { useMemo, useState } from "react";
 
@@ -9,6 +9,13 @@ import {
   TREATMENT_CATEGORIES,
   type TreatmentCategory,
 } from "@/lib/treatments/catalog";
+
+function CategoryIcon({ category }: { category: TreatmentCategory }) {
+  const cls = "h-7 w-7 text-[var(--premium-gold)]";
+  if (category === "Cortes y peinado") return <Scissors className={cls} strokeWidth={1.9} />;
+  if (category === "Color") return <Palette className={cls} strokeWidth={1.9} />;
+  return <Sparkles className={cls} strokeWidth={1.9} />;
+}
 
 export default function TreatmentsPage() {
   const [activeCategory, setActiveCategory] = useState<TreatmentCategory>("Cortes y peinado");
@@ -50,29 +57,18 @@ export default function TreatmentsPage() {
           })}
         </section>
 
-        <div className="mb-2">
-          <Link
-            href="/antes-y-despues"
-            className="flex h-10 w-full items-center justify-center rounded-full border border-[var(--premium-gold)]/30 bg-black/40 text-[13px] font-medium text-[var(--soft-gray)] shadow-[inset_0_1px_0_rgba(228,202,105,0.2)] transition-colors hover:border-[var(--premium-gold)]/48 hover:bg-[var(--premium-gold)]/[0.07] hover:text-[var(--premium-gold)]"
-          >
-            Ver antes y después
-          </Link>
-        </div>
-
         <section className="grid grid-cols-2 gap-3">
           {filteredServices.map((service) => (
             <article
               key={service.id}
               className="overflow-hidden rounded-2xl border border-white/8 bg-[#1a1a1a] shadow-[0_8px_22px_rgba(0,0,0,0.45)]"
             >
-              <div className="relative">
-                <img
-                  src={service.imageUrl}
-                  alt={service.name}
-                  loading="lazy"
-                  decoding="async"
-                  className="h-32 w-full object-cover"
-                />
+              <div className="relative h-32 overflow-hidden bg-[#141414]">
+                <div className="absolute inset-0 bg-[radial-gradient(circle_at_18%_18%,rgba(228,202,105,0.22),transparent_46%),linear-gradient(135deg,#191919_0%,#131313_58%,#0f0f0f_100%)]" />
+                <div className="absolute inset-0 bg-[linear-gradient(to_bottom,rgba(255,255,255,0.04),rgba(255,255,255,0))]" />
+                <div className="relative z-10 flex h-full items-center justify-center">
+                  <CategoryIcon category={service.category} />
+                </div>
                 <div className="pointer-events-none absolute right-0 bottom-0 left-0 h-16 bg-gradient-to-b from-transparent to-[#1a1a1a]" />
               </div>
 

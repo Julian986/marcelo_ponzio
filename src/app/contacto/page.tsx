@@ -1,7 +1,6 @@
 "use client";
 
 import {
-  CalendarClock,
   CalendarDays,
   Home as HomeIcon,
   Instagram,
@@ -11,7 +10,6 @@ import {
   User,
 } from "lucide-react";
 import Link from "next/link";
-import { useCallback } from "react";
 
 function WhatsappIcon(props: React.SVGProps<SVGSVGElement>) {
   return (
@@ -39,14 +37,14 @@ type ContactItem = {
 const contactItems: ContactItem[] = [
   {
     label: "Dirección",
-    description: "Moreno 62 · Piso 3 · Oficina 8 · Bahía Blanca",
+    description: "Suipacha 1839 · Funes",
     icon: MapPin,
   },
   {
     label: "WhatsApp",
-    description: "+54 9 2915 24-7730",
+    description: "+54 9 341 398-2210",
     icon: WhatsappIcon,
-    href: "https://wa.me/5492915247730",
+    href: "https://wa.me/5493413982210",
   },
   {
     label: "Instagram",
@@ -54,21 +52,14 @@ const contactItems: ContactItem[] = [
     icon: Instagram,
     href: "https://www.instagram.com/marceloponzioestilista",
   },
-  {
-    label: "Horarios",
-    description: "Ver detalle de horarios de atención",
-    icon: CalendarClock,
-  },
+  // {
+  //   label: "Horarios",
+  //   description: "Ver detalle de horarios de atención",
+  //   icon: CalendarClock,
+  // },
 ];
 
 export default function ContactoPage() {
-  const scrollToHorarios = useCallback(() => {
-    const el = document.getElementById("detalle-horarios");
-    if (el) {
-      el.scrollIntoView({ behavior: "smooth", block: "start" });
-    }
-  }, []);
-
   return (
     <div className="min-h-screen bg-[#111111] text-white">
       <main className="mx-auto w-full max-w-md px-4 pt-6 pb-24">
@@ -105,19 +96,6 @@ export default function ContactoPage() {
                 </div>
               );
 
-              if (item.label === "Horarios") {
-                return (
-                  <button
-                    key={item.label}
-                    type="button"
-                    onClick={scrollToHorarios}
-                    className="block w-full text-left"
-                  >
-                    {content}
-                  </button>
-                );
-              }
-
               if (item.href) {
                 return (
                   <Link
@@ -147,7 +125,7 @@ export default function ContactoPage() {
           </p>
           <div className="mt-2 overflow-hidden rounded-xl border border-white/8 bg-black/40">
             <iframe
-              src="https://www.google.com/maps?q=Marcelo+Ponzio+Estilista+Bah%C3%ADa+Blanca&z=15&output=embed"
+              src="https://www.google.com/maps?q=Suipacha+1839,+Funes,+Santa+Fe,+Argentina&z=16&output=embed"
               loading="lazy"
               referrerPolicy="no-referrer-when-downgrade"
               className="h-48 w-full border-0"
@@ -155,7 +133,7 @@ export default function ContactoPage() {
             />
           </div>
           <Link
-            href="https://www.google.com/maps/search/Marcelo+Ponzio+Estilista+Bah%C3%ADa+Blanca"
+            href="https://www.google.com/maps/search/Suipacha+1839,+Funes,+Santa+Fe,+Argentina"
             target="_blank"
             rel="noopener noreferrer"
             className="mt-2 inline-flex items-center gap-2 text-[11px] text-[var(--premium-gold)]"
@@ -164,6 +142,7 @@ export default function ContactoPage() {
           </Link>
         </section>
 
+        {/*
         <section
           id="detalle-horarios"
           className="mt-4 rounded-2xl border border-white/8 bg-[#181818] p-3"
@@ -184,6 +163,7 @@ export default function ContactoPage() {
             <p>Sábados · 08:00–12:00</p>
           </div>
         </section>
+        */}
       </main>
 
       <nav className="fixed right-0 bottom-0 left-0 z-30">

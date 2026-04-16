@@ -3,6 +3,7 @@ import type { Db, ObjectId } from "mongodb";
 import { MongoServerError, ObjectId as ObjectIdCtor } from "mongodb";
 
 import { getAvailableTimesForDate, formatSalonDisplayDate } from "@/lib/booking/salon-availability";
+import { isPublicLeadTimeViolated } from "@/lib/booking/public-slot-lead";
 import { SALON_TREATMENTS } from "@/lib/treatments/catalog";
 
 import type { CreateReservationInput, MpWebhookEventDoc, ReservationDoc, ReservationStatus } from "./types";
@@ -75,6 +76,12 @@ export async function insertPendingReservation(
   }
 
   const now = new Date();
+  if (isPublicLeadTimeViolated(input.dateKey, startsAt, now)) {
+    return {
+      error: "Para hoy, los turnos deben reservarse con al menos 1 hora de anticipación.",
+      code: "LEAD_TIME",
+    };
+  }
   const checkoutToken = randomBytes(32).toString("hex");
   const paymentDeadlineAt = new Date(now.getTime() + pendingTtlMs());
 

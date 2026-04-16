@@ -1,6 +1,6 @@
 "use client";
 
-import { CalendarDays, Home as HomeIcon, Percent, Sparkles, User } from "lucide-react";
+import { CalendarDays, Home as HomeIcon, Palette, Percent, Scissors, Sparkles, User } from "lucide-react";
 import Link from "next/link";
 import { useMemo, useState } from "react";
 
@@ -14,7 +14,6 @@ type Promo = {
   title: string;
   subtitle: string;
   details: string;
-  imageUrl: string;
   category: TreatmentCategory;
 };
 
@@ -24,8 +23,6 @@ const promos: Promo[] = [
     title: "Servicio completo",
     subtitle: "Color + lavado + corte + peinado",
     details: "1 h 30 min · Todo en una visita.",
-    imageUrl:
-      "https://images.unsplash.com/photo-1560066987-138a9a6e6fd4?auto=format&fit=crop&w=900&q=80",
     category: "Cortes y peinado",
   },
   {
@@ -33,8 +30,6 @@ const promos: Promo[] = [
     title: "Balayage",
     subtitle: "Luz natural",
     details: "2 h · Consultá tonos y mantenimiento.",
-    imageUrl:
-      "https://images.unsplash.com/photo-1633681926022-84c122e8b9d3?auto=format&fit=crop&w=900&q=80",
     category: "Color",
   },
   {
@@ -42,8 +37,6 @@ const promos: Promo[] = [
     title: "Keratina",
     subtitle: "Brillo y alisado",
     details: "1 h · Incluye peinado.",
-    imageUrl:
-      "https://images.unsplash.com/photo-1519699047748-de8e457a634e?auto=format&fit=crop&w=900&q=80",
     category: "Tratamiento",
   },
   {
@@ -51,11 +44,16 @@ const promos: Promo[] = [
     title: "Corte Dama",
     subtitle: "Estilo y forma",
     details: "30 min · Lavado incluido.",
-    imageUrl:
-      "https://images.unsplash.com/photo-1562322140-8baeececf3df?auto=format&fit=crop&w=900&q=80",
     category: "Cortes y peinado",
   },
 ];
+
+function CategoryIcon({ category }: { category: TreatmentCategory }) {
+  const cls = "h-8 w-8 text-[var(--premium-gold)]";
+  if (category === "Cortes y peinado") return <Scissors className={cls} strokeWidth={1.9} />;
+  if (category === "Color") return <Palette className={cls} strokeWidth={1.9} />;
+  return <Sparkles className={cls} strokeWidth={1.9} />;
+}
 
 export default function PromotionsPage() {
   const [activeCategory, setActiveCategory] = useState<TreatmentCategory>("Cortes y peinado");
@@ -95,26 +93,31 @@ export default function PromotionsPage() {
           {filteredPromos.map((promo) => (
             <article
               key={promo.id}
-              className="relative h-40 overflow-hidden rounded-2xl border border-white/8 bg-[#1a1a1a] shadow-[0_10px_24px_rgba(0,0,0,0.45)]"
+              className="relative overflow-hidden rounded-2xl border border-white/8 bg-[#1a1a1a] shadow-[0_10px_24px_rgba(0,0,0,0.45)]"
             >
-              <img
-                src={promo.imageUrl}
-                alt={promo.title}
-                loading="lazy"
-                decoding="async"
-                className="absolute inset-0 h-full w-full object-cover"
-              />
+              <div className="absolute inset-0 grid grid-cols-[47%_53%]">
+                <div className="relative flex min-h-[148px] flex-col overflow-hidden border-r border-white/6 bg-[#141414]">
+                  <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_16%,rgba(228,202,105,0.22),transparent_44%),linear-gradient(135deg,#191919_0%,#111111_62%,#0e0e0e_100%)]" />
+                  <div className="relative z-10 flex flex-1 flex-col items-center justify-center gap-2">
+                    <CategoryIcon category={promo.category} />
+                    <span className="text-[10px] tracking-[0.12em] text-[var(--soft-gray)]/68">
+                      PROMO
+                    </span>
+                  </div>
+                </div>
+                <div className="min-h-[148px] bg-[linear-gradient(180deg,#f4ecdd_0%,#eadfc9_100%)]" />
+              </div>
 
-              <div className="absolute inset-0 bg-gradient-to-r from-black/10 via-[#f1e8d8]/35 to-[#f1e8d8]/85" />
-
-              <div className="relative z-10 ml-auto flex h-full w-[53%] flex-col px-3 py-2.5">
-                <h2 className="text-[28px] leading-none font-heading text-[#1b1916]">{promo.title}</h2>
+              <div className="relative z-10 ml-auto flex w-[53%] flex-col px-3 py-3">
+                <h2 className="text-[22px] leading-tight font-heading text-[#1b1916] sm:text-[26px]">
+                  {promo.title}
+                </h2>
                 <p className="mt-1 text-[11px] text-[#2c2922]/80">{promo.subtitle}</p>
                 <p className="mt-1 text-[11px] leading-tight text-[#2c2922]/90">{promo.details}</p>
-                <div className="mt-auto pt-2">
+                <div className="mt-3">
                   <Link
                     href={`/turnos?treatment=${encodeURIComponent(promo.title)}`}
-                    className="flex h-8 w-full items-center justify-center rounded-full bg-gradient-to-r from-[var(--accent-orange)] to-[var(--premium-gold)] text-[13px] font-medium text-white"
+                    className="flex h-9 w-full items-center justify-center rounded-full bg-gradient-to-r from-[var(--accent-orange)] to-[var(--premium-gold)] text-[13px] font-medium text-white"
                   >
                     Reservar
                   </Link>

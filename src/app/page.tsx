@@ -3,6 +3,7 @@
 import { BrandLogo } from "@/components/brand-logo";
 import { HOME_HERO_IMAGE_URL } from "@/lib/home-hero-image";
 import { CalendarDays, Home as HomeIcon, Percent, Sparkles, User } from "lucide-react";
+import Image from "next/image";
 import Link from "next/link";
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 
@@ -48,17 +49,20 @@ function SplashScreen({ onLogoReady }: { onLogoReady: () => void }) {
 function HomeContent() {
   return (
     <div className="relative min-h-screen overflow-hidden bg-[#111111] text-white">
-      {/* Fondo fijo de la pantalla */}
-      <div
-        className="fixed top-0 right-0 left-0 z-0"
-        style={{
-          height: "100svh",
-          backgroundImage: `url('${HOME_HERO_IMAGE_URL}')`,
-          backgroundSize: "cover",
-          backgroundPosition: "center 35%",
-          backgroundRepeat: "no-repeat",
-        }}
-      />
+      {/* Fondo fijo: Next Image → /_next/image (formato y ancho según viewport) */}
+      <div className="fixed top-0 right-0 left-0 z-0 h-[100svh]">
+        <Image
+          src={HOME_HERO_IMAGE_URL}
+          alt=""
+          fill
+          priority
+          fetchPriority="high"
+          sizes="100vw"
+          quality={80}
+          className="object-cover object-[center_35%]"
+          aria-hidden
+        />
+      </div>
 
       {/* Overlay para lectura */}
       <div
@@ -110,12 +114,6 @@ function HomeContent() {
           </section>
 
           <section className="mx-auto w-[84%] space-y-3">
-            <Link
-              href="/antes-y-despues"
-              className="flex h-[52px] w-full items-center justify-center rounded-full border border-white/8 bg-black/45 px-6 text-[15px] font-medium tracking-[0.14em] text-white backdrop-blur-[10px]"
-            >
-              Antes y después
-            </Link>
             <Link
               href="/contacto"
               className="flex h-[52px] w-full items-center justify-center rounded-full border border-white/8 bg-black/45 px-6 text-[15px] font-medium tracking-[0.14em] text-white backdrop-blur-[10px]"
