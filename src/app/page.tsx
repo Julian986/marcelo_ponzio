@@ -49,8 +49,8 @@ function SplashScreen({ onLogoReady }: { onLogoReady: () => void }) {
 function HomeContent() {
   return (
     <div className="relative min-h-screen overflow-hidden bg-[#111111] text-white">
-      {/* Fondo fijo: Next Image → /_next/image (formato y ancho según viewport) */}
-      <div className="fixed top-0 right-0 left-0 z-0 h-[100svh]">
+      {/* Fondo con foto: solo hasta md — en pantallas anchas el cover recorta mal una portada vertical */}
+      <div className="fixed top-0 right-0 left-0 z-0 h-[100svh] md:hidden">
         <Image
           src={HOME_HERO_IMAGE_URL}
           alt=""
@@ -64,13 +64,26 @@ function HomeContent() {
         />
       </div>
 
-      {/* Overlay para lectura */}
+      {/* Degradado sobre la foto (solo móvil) */}
       <div
-        className="fixed top-0 right-0 left-0 z-10"
+        className="fixed top-0 right-0 left-0 z-10 h-[100svh] md:hidden"
         style={{
-          height: "100svh",
           backgroundImage:
             "linear-gradient(to bottom, rgba(17,17,17,0.98) 0%, rgba(17,17,17,0.88) 16%, rgba(17,17,17,0.48) 38%, rgba(17,17,17,0.22) 54%, rgba(17,17,17,0.62) 68%, rgba(17,17,17,0.94) 84%, rgba(17,17,17,1) 100%)",
+        }}
+      />
+
+      {/* Tablet / escritorio: sin foto, fondo editorial coherente con la app */}
+      <div
+        aria-hidden
+        className="fixed top-0 right-0 left-0 z-0 hidden h-[100svh] bg-[#111111] md:block"
+        style={{
+          backgroundImage: [
+            "radial-gradient(ellipse 120% 70% at 50% -15%, rgba(228,202,105,0.14), transparent 52%)",
+            "radial-gradient(ellipse 80% 55% at 100% 40%, rgba(206,120,50,0.07), transparent 45%)",
+            "radial-gradient(ellipse 60% 50% at 0% 75%, rgba(228,202,105,0.05), transparent 42%)",
+            "linear-gradient(to bottom, #151515 0%, #111111 38%, #101010 100%)",
+          ].join(","),
         }}
       />
 
@@ -88,7 +101,7 @@ function HomeContent() {
           </div>
         </header>
 
-        <div className="mt-[31vh] space-y-4">
+        <div className="mt-[31vh] space-y-4 md:mt-14">
           <section className="pb-1">
             <h1 className="sr-only">Marcelo Ponzio Estilista</h1>
             <div className="mx-auto flex w-[84%] flex-col gap-3">

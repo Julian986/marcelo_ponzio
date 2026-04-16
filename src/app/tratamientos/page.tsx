@@ -61,9 +61,9 @@ export default function TreatmentsPage() {
           {filteredServices.map((service) => (
             <article
               key={service.id}
-              className="overflow-hidden rounded-2xl border border-white/8 bg-[#1a1a1a] shadow-[0_8px_22px_rgba(0,0,0,0.45)]"
+              className="flex h-full min-h-0 flex-col overflow-hidden rounded-2xl border border-white/8 bg-[#1a1a1a] shadow-[0_8px_22px_rgba(0,0,0,0.45)]"
             >
-              <div className="relative h-32 overflow-hidden bg-[#141414]">
+              <div className="relative h-32 shrink-0 overflow-hidden bg-[#141414]">
                 <div className="absolute inset-0 bg-[radial-gradient(circle_at_18%_18%,rgba(228,202,105,0.22),transparent_46%),linear-gradient(135deg,#191919_0%,#131313_58%,#0f0f0f_100%)]" />
                 <div className="absolute inset-0 bg-[linear-gradient(to_bottom,rgba(255,255,255,0.04),rgba(255,255,255,0))]" />
                 <div className="relative z-10 flex h-full items-center justify-center">
@@ -72,7 +72,7 @@ export default function TreatmentsPage() {
                 <div className="pointer-events-none absolute right-0 bottom-0 left-0 h-16 bg-gradient-to-b from-transparent to-[#1a1a1a]" />
               </div>
 
-              <div className="relative z-10 -mt-2 px-3 pt-0 pb-3">
+              <div className="relative z-10 -mt-2 flex min-h-0 flex-1 flex-col px-3 pt-0 pb-3">
                 <h2 className="text-[17px] leading-tight font-heading">{service.name}</h2>
                 <p className="mt-1 line-clamp-3 text-[11px] leading-tight text-[var(--soft-gray)]/80">
                   {service.description}
@@ -81,12 +81,14 @@ export default function TreatmentsPage() {
                   Duración: {service.durationLabel}
                 </p>
 
-                <Link
-                  href={`/turnos?treatment=${encodeURIComponent(service.name)}`}
-                  className="mt-2 flex h-8 w-full items-center justify-center rounded-full bg-gradient-to-r from-[var(--accent-orange)] to-[var(--premium-gold)] text-[14px] font-medium text-white"
-                >
-                  Reservar
-                </Link>
+                <div className="mt-auto pt-2">
+                  <Link
+                    href={`/turnos?treatment=${encodeURIComponent(service.name)}`}
+                    className="flex h-8 w-full items-center justify-center rounded-full bg-gradient-to-r from-[var(--accent-orange)] to-[var(--premium-gold)] text-[14px] font-medium text-white"
+                  >
+                    Reservar
+                  </Link>
+                </div>
               </div>
             </article>
           ))}
