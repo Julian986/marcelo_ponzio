@@ -1,5 +1,5 @@
-import { addDays, startOfDay } from "date-fns";
-import { formatInTimeZone, fromZonedTime, toZonedTime } from "date-fns-tz";
+import { addDays } from "date-fns";
+import { formatInTimeZone, fromZonedTime } from "date-fns-tz";
 import { NextResponse } from "next/server";
 
 import { getDb } from "@/lib/mongodb";
@@ -10,7 +10,7 @@ const TZ = "America/Argentina/Buenos_Aires";
 function normalizeTo(to) {
   // normaliza a +549 para celulares argentinos
   let phone = String(to ?? "").replace(/\D/g, ""); // saca espacios
-  if (!phone) throw new Error("appointment.clientPhone inválido");
+  if (!phone) throw new Error("reservation.customerPhone inválido");
   if (phone.startsWith("549")) phone = phone;
   else if (phone.startsWith("54")) phone = `549${phone.slice(2)}`;
   else if (phone.startsWith("9")) phone = `54${phone}`;
@@ -21,15 +21,14 @@ function normalizeTo(to) {
 }
 
 function buildTomorrowRangeInArgentina(now = new Date()) {
-  const zonedNow = toZonedTime(now, TZ);
-  const tomorrowLocalStart = addDays(startOfDay(zonedNow), 1);
-  const dayAfterLocalStart = addDays(tomorrowLocalStart, 1);
+  const todayKey = formatInTimeZone(now, TZ, "yyyy-MM-dd");
+  const noonTodayArt = fromZonedTime(`${todayKey}T12:00:00`, TZ);
+  const dateKey = formatInTimeZone(addDays(noonTodayArt, 1), TZ, "yyyy-MM-dd");
 
-  return {
-    dateKey: formatInTimeZone(tomorrowLocalStart, TZ, "yyyy-MM-dd"),
-    startUtc: fromZonedTime(tomorrowLocalStart, TZ),
-    endUtc: fromZonedTime(dayAfterLocalStart, TZ),
-  };
+  const startUtc = fromZonedTime(`${dateKey}T00:00:00.000`, TZ);
+  const endUtc = fromZonedTime(`${dateKey}T23:59:59.999`, TZ);
+
+  return { dateKey, startUtc, endUtc };
 }
 
 export async function GET(request) {
@@ -49,31 +48,38 @@ export async function GET(request) {
     }
 
     const { dateKey, startUtc, endUtc } = buildTomorrowRangeInArgentina();
+    console.log(
+      `Searching reservations between ${startUtc.toISOString()} and ${endUtc.toISOString()} for dateKey ${dateKey}`,
+    );
     const db = await getDb();
-    const appointmentsCol = db.collection("appointments");
+    const reservationsCol = db.collection("reservations");
     const logsCol = db.collection("whatsapp_logs");
     const client = getTwilioClient();
 
-    const appointments = await appointmentsCol
+    const reservations = await reservationsCol
       .find({
-        startsAt: { $gte: startUtc, $lt: endUtc },
-        status: "confirmed",
+        startsAt: { $gte: startUtc, $lte: endUtc },
+        reservationStatus: "confirmed",
+        paymentStatus: "approved",
+        whatsappOptIn: true,
         waReminder24hSentAt: null,
-        clientPhone: { $exists: true, $nin: [null, ""] },
+        customerPhone: { $exists: true, $nin: [null, ""] },
       })
       .toArray();
 
     let sent = 0;
     let errors = 0;
 
-    for (const appointment of appointments) {
+    for (const reservation of reservations) {
       const claimedAt = new Date();
-      const claim = await appointmentsCol.findOneAndUpdate(
+      const claim = await reservationsCol.findOneAndUpdate(
         {
-          _id: appointment._id,
-          status: "confirmed",
+          _id: reservation._id,
+          reservationStatus: "confirmed",
+          paymentStatus: "approved",
+          whatsappOptIn: true,
           waReminder24hSentAt: null,
-          clientPhone: { $exists: true, $nin: [null, ""] },
+          customerPhone: { $exists: true, $nin: [null, ""] },
         },
         { $set: { waReminder24hSentAt: claimedAt } },
         { returnDocument: "before" },
@@ -84,20 +90,20 @@ export async function GET(request) {
       }
 
       try {
-        const nombre = appointment.clientName ?? "";
-        const servicio = appointment.treatmentName ?? appointment.serviceName ?? "";
-        const fecha = formatInTimeZone(appointment.startsAt, TZ, "dd/MM/yyyy");
-        const hora = formatInTimeZone(appointment.startsAt, TZ, "HH:mm");
+        const nombre = reservation.customerName ?? "";
+        const servicio = reservation.treatmentName ?? "";
+        const fecha = formatInTimeZone(reservation.startsAt, TZ, "dd/MM/yyyy");
+        const hora = formatInTimeZone(reservation.startsAt, TZ, "HH:mm");
 
         const twilioResponse = await client.messages.create({
           from: process.env.TWILIO_WHATSAPP_FROM,
-          to: normalizeTo(appointment.clientPhone),
+          to: normalizeTo(reservation.customerPhone),
           contentSid: process.env.TWILIO_REMINDER_CONTENT_SID,
           contentVariables: JSON.stringify({ "1": nombre, "2": servicio, "3": fecha, "4": hora }),
         });
 
         await logsCol.insertOne({
-          to: appointment.clientPhone,
+          to: reservation.customerPhone,
           message: "",
           sid: twilioResponse.sid,
           status: twilioResponse.status,
@@ -110,13 +116,13 @@ export async function GET(request) {
       } catch (error) {
         errors += 1;
 
-        await appointmentsCol.updateOne(
-          { _id: appointment._id, waReminder24hSentAt: claimedAt },
+        await reservationsCol.updateOne(
+          { _id: reservation._id, waReminder24hSentAt: claimedAt },
           { $set: { waReminder24hSentAt: null } },
         );
 
         await logsCol.insertOne({
-          to: appointment.clientPhone ?? null,
+          to: reservation.customerPhone ?? null,
           message: "",
           sid: null,
           status: "failed",

@@ -44,6 +44,8 @@ export type ReservationDoc = {
   mpPaymentApprovedAt?: Date | null;
   paymentDeadlineAt?: Date | null;
   cancelReason?: string | null;
+  /** Marca de envío del recordatorio WhatsApp ~24h antes (cron). */
+  waReminder24hSentAt?: Date | null;
 };
 
 export type CreateReservationInput = {
