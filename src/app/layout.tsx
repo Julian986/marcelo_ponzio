@@ -26,7 +26,7 @@ export async function generateMetadata(): Promise<Metadata> {
   const siteOrigin = resolvePublicSiteOrigin(h);
   const metadataBase = new URL(`${siteOrigin}/`);
   /** Sin `?v=` en la URL: algunos scrapers de Meta fallan con query en og:image. */
-  const ogImageAbsolute = `${siteOrigin}/og-image.jpg`;
+  const ogImageAbsolute = `${siteOrigin}/og-image-v3.jpg`;
 
   return {
     metadataBase,
@@ -51,7 +51,7 @@ export async function generateMetadata(): Promise<Metadata> {
       locale: "es_AR",
       url: `${siteOrigin}/`,
       siteName: "MP Estilista",
-      title: "MP Estilista - Marcelo Ponzio",
+      title: "Marcelo Ponzio · Reserva Online",
       description: "Reserva tu turno online",
       images: [
         {
