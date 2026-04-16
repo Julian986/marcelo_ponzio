@@ -3,7 +3,7 @@
 import { ChevronLeft } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 import { BookingPicker } from "@/components/booking/booking-picker";
 import {
@@ -24,6 +24,7 @@ export function PanelNuevoTurnoClient() {
   const [panelNotes, setPanelNotes] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [remoteSlots, setRemoteSlots] = useState<string[] | null | undefined>(undefined);
   const bookingFocusRef = useRef<HTMLDivElement | null>(null);
 
   const selectedTreatment = useMemo(
@@ -39,6 +40,41 @@ export function PanelNuevoTurnoClient() {
   );
   const showWhatsappInvalidHint =
     customerPhone.trim().length >= 8 && !isLikelyWhatsappNumber(customerPhone);
+
+  useEffect(() => {
+    if (!selectedDate || !selectedTreatmentId) {
+      setRemoteSlots(undefined);
+      return;
+    }
+    let cancelled = false;
+    setRemoteSlots(null);
+    const q = new URLSearchParams({
+      dateKey: selectedDate,
+      treatmentId: selectedTreatmentId,
+      scope: "panel",
+    });
+    fetch(`/api/booking/slots?${q.toString()}`, { credentials: "same-origin" })
+      .then((res) => res.json())
+      .then((data: { slots?: string[] }) => {
+        if (!cancelled) {
+          setRemoteSlots(Array.isArray(data.slots) ? data.slots : []);
+        }
+      })
+      .catch(() => {
+        if (!cancelled) setRemoteSlots([]);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [selectedDate, selectedTreatmentId]);
+
+  useEffect(() => {
+    if (!selectedDate || !selectedTime || !selectedTreatmentId) return;
+    if (remoteSlots === undefined || remoteSlots === null) return;
+    if (!remoteSlots.includes(selectedTime)) {
+      setSelectedTime("");
+    }
+  }, [selectedDate, selectedTime, selectedTreatmentId, remoteSlots]);
 
   async function handleSubmit() {
     if (!selectedTreatment || !selectedDate || !selectedTime || !datosComplete) return;
@@ -98,6 +134,9 @@ export function PanelNuevoTurnoClient() {
           onDateChange={setSelectedDate}
           selectedTime={selectedTime}
           onTimeChange={setSelectedTime}
+          remoteTimeSlots={
+            selectedDate && selectedTreatmentId ? (remoteSlots ?? null) : undefined
+          }
           bookingFocusRef={bookingFocusRef}
           treatmentFirstHintVisible={treatmentFirstHintVisible}
           onTreatmentFirstHintVisible={setTreatmentFirstHintVisible}

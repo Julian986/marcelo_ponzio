@@ -23,6 +23,11 @@ export type BookingPickerProps = {
   onTimeChange: (time: string) => void;
   /** Si se pasa, define qué horarios mostrar (ej. reserva pública con margen de 60 min en “hoy”). */
   resolveTimeSlots?: (dateKey: string) => string[];
+  /**
+   * Horarios ya resueltos en servidor (solapes, reglas). Solo aplica al `selectedDate` actual.
+   * `undefined`: usar `resolveTimeSlots` / plantilla. `null`: cargando.
+   */
+  remoteTimeSlots?: string[] | null;
   bookingFocusRef?: React.RefObject<HTMLDivElement | null>;
   treatmentFirstHintVisible: boolean;
   onTreatmentFirstHintVisible: (visible: boolean) => void;
@@ -36,6 +41,7 @@ export function BookingPicker({
   selectedTime,
   onTimeChange,
   resolveTimeSlots,
+  remoteTimeSlots,
   bookingFocusRef,
   treatmentFirstHintVisible,
   onTreatmentFirstHintVisible,
@@ -64,8 +70,16 @@ export function BookingPicker({
   );
   const visibleMonthLabel = `${salonMonthNames[visibleMonthDate.getMonth()]} ${visibleMonthDate.getFullYear()}`;
 
+  const useRemoteSlots = remoteTimeSlots !== undefined;
+  const slotsLoading = useRemoteSlots && selectedDate && remoteTimeSlots === null;
   const availableTimes = selectedDate
-    ? (resolveTimeSlots ? resolveTimeSlots(selectedDate) : getAvailableTimesForDate(selectedDate))
+    ? useRemoteSlots
+      ? remoteTimeSlots === null
+        ? []
+        : remoteTimeSlots
+      : resolveTimeSlots
+        ? resolveTimeSlots(selectedDate)
+        : getAvailableTimesForDate(selectedDate)
     : [];
 
   const activeStep = !selectedTreatment
@@ -251,7 +265,11 @@ export function BookingPicker({
           </div>
 
           <div className="mt-4 grid grid-cols-2 gap-3">
-            {availableTimes.length > 0 ? (
+            {slotsLoading ? (
+              <div className="col-span-2 rounded-2xl border border-white/8 bg-[#171717] px-4 py-5 text-center text-[13px] text-[var(--soft-gray)]/68">
+                Cargando horarios…
+              </div>
+            ) : availableTimes.length > 0 ? (
               availableTimes.map((time) => {
                 const isActive = time === selectedTime;
                 return (

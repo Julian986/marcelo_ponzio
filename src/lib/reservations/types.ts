@@ -26,6 +26,8 @@ export type ReservationDoc = {
   timeLocal: string;
   displayDate: string;
   startsAt: Date;
+  /** Duración del servicio en minutos (catálogo al crear; ausente en reservas viejas). */
+  durationMinutes?: number;
   customerName: string;
   customerPhone: string;
   whatsappOptIn: boolean;

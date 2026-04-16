@@ -2,9 +2,11 @@ import { randomBytes } from "crypto";
 import type { Db, ObjectId } from "mongodb";
 import { MongoServerError, ObjectId as ObjectIdCtor } from "mongodb";
 
-import { getAvailableTimesForDate, formatSalonDisplayDate } from "@/lib/booking/salon-availability";
+import { computeBookableSlots } from "@/lib/booking/compute-bookable-slots";
+import { formatSalonDisplayDate } from "@/lib/booking/salon-availability";
 import { isPublicLeadTimeViolated } from "@/lib/booking/public-slot-lead";
-import { SALON_TREATMENTS } from "@/lib/treatments/catalog";
+import { reservationIntervalOverlapsExisting, slotIntervalMs } from "@/lib/booking/slot-overlap";
+import { SALON_TREATMENTS, findSalonTreatmentById } from "@/lib/treatments/catalog";
 
 import type { CreateReservationInput, MpWebhookEventDoc, ReservationDoc, ReservationStatus } from "./types";
 
@@ -70,6 +72,11 @@ export async function insertPendingReservation(
   | { id: string; checkoutToken: string; externalReference: string }
   | { error: string; code?: string }
 > {
+  const treatment = findSalonTreatmentById(input.treatmentId.trim());
+  if (!treatment) {
+    return { error: "Tratamiento inválido.", code: "INVALID_TREATMENT" };
+  }
+
   const startsAt = computeStartsAtUtc(input.dateKey, input.timeLocal);
   if (!startsAt) {
     return { error: "Fecha u horario inválidos.", code: "INVALID_SLOT" };
@@ -82,6 +89,33 @@ export async function insertPendingReservation(
       code: "LEAD_TIME",
     };
   }
+
+  await ensureReservationIndexes(db);
+
+  const allowedPublic = await computeBookableSlots(db, {
+    dateKey: input.dateKey,
+    treatmentId: treatment.id,
+    now,
+    scope: "public",
+  });
+  if (!allowedPublic.includes(input.timeLocal.trim())) {
+    return {
+      error: "Ese horario no está disponible para este servicio.",
+      code: "SLOT_UNAVAILABLE",
+    };
+  }
+
+  const interval = slotIntervalMs(input.dateKey, input.timeLocal.trim(), treatment.durationMinutes);
+  if (!interval) {
+    return { error: "Fecha u horario inválidos.", code: "INVALID_SLOT" };
+  }
+  if (await reservationIntervalOverlapsExisting(db, input.dateKey, interval)) {
+    return {
+      error: "Ese horario ya no está disponible (se solapa con otro turno).",
+      code: "SLOT_OVERLAP",
+    };
+  }
+
   const checkoutToken = randomBytes(32).toString("hex");
   const paymentDeadlineAt = new Date(now.getTime() + pendingTtlMs());
 
@@ -94,6 +128,7 @@ export async function insertPendingReservation(
     timeLocal: input.timeLocal,
     displayDate: input.displayDate,
     startsAt,
+    durationMinutes: treatment.durationMinutes,
     customerName: input.customerName,
     customerPhone: input.customerPhone,
     whatsappOptIn: input.whatsappOptIn,
@@ -105,8 +140,6 @@ export async function insertPendingReservation(
     checkoutToken,
     paymentDeadlineAt,
   } satisfies Omit<ReservationDoc, "_id" | "externalReference" | "preferenceId" | "mpPaymentId">;
-
-  await ensureReservationIndexes(db);
 
   try {
     const result = await db.collection(COLLECTION).insertOne(doc);
@@ -159,9 +192,29 @@ export async function insertPanelReservation(
     return { error: "Fecha u horario inválidos.", code: "INVALID_SLOT" };
   }
 
-  const allowedTimes = getAvailableTimesForDate(dateKey);
+  const now = new Date();
+
+  await ensureReservationIndexes(db);
+
+  const allowedTimes = await computeBookableSlots(db, {
+    dateKey,
+    treatmentId: treatment.id,
+    now,
+    scope: "panel",
+  });
   if (!allowedTimes.includes(timeLocal)) {
     return { error: "Ese horario no está disponible.", code: "SLOT_UNAVAILABLE" };
+  }
+
+  const interval = slotIntervalMs(dateKey, timeLocal, treatment.durationMinutes);
+  if (!interval) {
+    return { error: "Fecha u horario inválidos.", code: "INVALID_SLOT" };
+  }
+  if (await reservationIntervalOverlapsExisting(db, dateKey, interval)) {
+    return {
+      error: "Ese horario se solapa con otro turno. Elegí otro.",
+      code: "SLOT_OVERLAP",
+    };
   }
 
   let panelNotes: string | null = null;
@@ -173,7 +226,6 @@ export async function insertPanelReservation(
     panelNotes = t;
   }
 
-  const now = new Date();
   const displayDate = formatSalonDisplayDate(dateKey);
   const createdBy = (process.env.PANEL_TURNOS_CREATED_BY ?? "panel").trim() || "panel";
 
@@ -186,6 +238,7 @@ export async function insertPanelReservation(
     timeLocal,
     displayDate,
     startsAt,
+    durationMinutes: treatment.durationMinutes,
     customerName: input.customerName.trim(),
     customerPhone: input.customerPhone.trim(),
     whatsappOptIn: input.whatsappOptIn === true,
@@ -209,8 +262,6 @@ export async function insertPanelReservation(
     | "cancelReason"
     | "waReminder24hSentAt"
   >;
-
-  await ensureReservationIndexes(db);
 
   try {
     const result = await db.collection(COLLECTION).insertOne(doc);

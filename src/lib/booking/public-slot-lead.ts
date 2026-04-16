@@ -1,6 +1,8 @@
 import { formatInTimeZone } from "date-fns-tz";
 
-import { getAvailableTimesForDate } from "@/lib/booking/salon-availability";
+import { filterSlotsServiceEndsOnOrBeforeClose, getAvailableTimesForDate } from "@/lib/booking/salon-availability";
+import { filterPublicSlotsByTreatmentRules } from "@/lib/booking/treatment-slot-rules";
+import { findSalonTreatmentById } from "@/lib/treatments/catalog";
 
 /** Agenda y “hoy” para reglas de reserva pública (Rosario = mismo offset que CABA). */
 export const RESERVATION_TZ = "America/Argentina/Buenos_Aires";
@@ -29,6 +31,25 @@ export function getPublicBookableTimeSlots(dateKey: string, now = new Date()): s
     const d = slotStartsAtUtcArt(dateKey, timeLocal);
     return d !== null && d.getTime() >= cutoff;
   });
+}
+
+/**
+ * Reserva pública (sin DB): margen 60 min en “hoy”, cierre vs duración del servicio, reflejos/balayage / keratina.
+ * Para solapes entre clientes usá `computeBookableSlots` + `/api/booking/slots`.
+ */
+export function getPublicBookableTimeSlotsForTreatment(
+  treatmentId: string | undefined,
+  dateKey: string,
+  now = new Date(),
+): string[] {
+  let slots = getPublicBookableTimeSlots(dateKey, now);
+  if (treatmentId) {
+    const t = findSalonTreatmentById(treatmentId);
+    if (t) {
+      slots = filterSlotsServiceEndsOnOrBeforeClose(slots, t.durationMinutes);
+    }
+  }
+  return filterPublicSlotsByTreatmentRules(treatmentId, slots);
 }
 
 /** Validación servidor para reserva pública (misma regla que UI). */

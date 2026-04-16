@@ -5,7 +5,6 @@ import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { BookingPicker } from "@/components/booking/booking-picker";
-import { getPublicBookableTimeSlots } from "@/lib/booking/public-slot-lead";
 import {
   SALON_TREATMENT_OPTIONS,
   formatSalonDisplayDate,
@@ -37,6 +36,8 @@ export default function TurnosClient({ initialTreatment = "" }: TurnosClientProp
   const [whatsappOptIn, setWhatsappOptIn] = useState(true);
   const [checkoutLoading, setCheckoutLoading] = useState(false);
   const [confirmError, setConfirmError] = useState<string | null>(null);
+  /** Horarios con solapes resueltos en servidor; `undefined` = no aplica, `null` = cargando. */
+  const [remoteSlots, setRemoteSlots] = useState<string[] | null | undefined>(undefined);
   const bookingFocusRef = useRef<HTMLDivElement | null>(null);
   const dataSectionRef = useRef<HTMLDivElement | null>(null);
   const paymentSectionRef = useRef<HTMLElement | null>(null);
@@ -81,12 +82,39 @@ export default function TurnosClient({ initialTreatment = "" }: TurnosClientProp
   }, [selectedTreatmentId, selectedDate, selectedTime]);
 
   useEffect(() => {
-    if (!selectedDate || !selectedTime) return;
-    const slots = getPublicBookableTimeSlots(selectedDate, new Date());
-    if (!slots.includes(selectedTime)) {
+    if (!selectedDate || !selectedTreatmentId) {
+      setRemoteSlots(undefined);
+      return;
+    }
+    let cancelled = false;
+    setRemoteSlots(null);
+    const q = new URLSearchParams({
+      dateKey: selectedDate,
+      treatmentId: selectedTreatmentId,
+      scope: "public",
+    });
+    fetch(`/api/booking/slots?${q.toString()}`)
+      .then((res) => res.json())
+      .then((data: { slots?: string[] }) => {
+        if (!cancelled) {
+          setRemoteSlots(Array.isArray(data.slots) ? data.slots : []);
+        }
+      })
+      .catch(() => {
+        if (!cancelled) setRemoteSlots([]);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [selectedDate, selectedTreatmentId]);
+
+  useEffect(() => {
+    if (!selectedDate || !selectedTime || !selectedTreatmentId) return;
+    if (remoteSlots === undefined || remoteSlots === null) return;
+    if (!remoteSlots.includes(selectedTime)) {
       setSelectedTime("");
     }
-  }, [selectedDate, selectedTime]);
+  }, [selectedDate, selectedTime, selectedTreatmentId, remoteSlots]);
 
   const scheduleScrollToPaymentSection = useCallback(() => {
     if (!hasSlot) return;
@@ -213,7 +241,9 @@ export default function TurnosClient({ initialTreatment = "" }: TurnosClientProp
           onDateChange={setSelectedDate}
           selectedTime={selectedTime}
           onTimeChange={setSelectedTime}
-          resolveTimeSlots={(dateKey) => getPublicBookableTimeSlots(dateKey, new Date())}
+          remoteTimeSlots={
+            selectedDate && selectedTreatmentId ? (remoteSlots ?? null) : undefined
+          }
           bookingFocusRef={bookingFocusRef}
           treatmentFirstHintVisible={treatmentFirstHintVisible}
           onTreatmentFirstHintVisible={setTreatmentFirstHintVisible}
