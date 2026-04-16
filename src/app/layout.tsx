@@ -16,10 +16,18 @@ const playfair = Playfair_Display({
   weight: ["400", "500", "600", "700"],
 });
 
-const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://marceloestilista.com";
+/** Misma versión en query para bust de caché (WhatsApp/CDN). */
+const ASSET_V = "2";
+
+const siteOrigin = (process.env.NEXT_PUBLIC_SITE_URL ?? "https://marceloestilista.com")
+  .trim()
+  .replace(/\/+$/, "");
+
+const metadataBase = new URL(`${siteOrigin}/`);
+const ogImageAbsolute = `${siteOrigin}/og-image.jpg?v=${ASSET_V}`;
 
 export const metadata: Metadata = {
-  metadataBase: new URL(siteUrl),
+  metadataBase,
   title: {
     default: "MP Estilista",
     template: "%s | MP Estilista",
@@ -27,25 +35,36 @@ export const metadata: Metadata = {
   description: "Reserva tu turno con Marcelo Ponzio",
   icons: {
     icon: [
-      { url: "/favicon-32.png?v=1", sizes: "32x32", type: "image/png" },
-      { url: "/favicon-16.png?v=1", sizes: "16x16", type: "image/png" },
+      { url: `/favicon-64.png?v=${ASSET_V}`, sizes: "64x64", type: "image/png" },
+      { url: `/favicon-48.png?v=${ASSET_V}`, sizes: "48x48", type: "image/png" },
+      { url: `/favicon-32.png?v=${ASSET_V}`, sizes: "32x32", type: "image/png" },
+      { url: `/favicon-16.png?v=${ASSET_V}`, sizes: "16x16", type: "image/png" },
     ],
-    apple: { url: "/apple-touch-icon.png?v=1", sizes: "180x180" },
-    shortcut: "/favicon-32.png?v=1",
+    apple: { url: `/apple-touch-icon.png?v=${ASSET_V}`, sizes: "180x180" },
+    shortcut: `/favicon-64.png?v=${ASSET_V}`,
   },
   manifest: "/manifest.json",
   openGraph: {
     type: "website",
     locale: "es_AR",
-    url: "/",
+    url: `${siteOrigin}/`,
     siteName: "MP Estilista",
     title: "MP Estilista - Marcelo Ponzio",
     description: "Reserva tu turno online",
-    images: [{ url: "/og-image.jpg?v=1", width: 1200, height: 630, alt: "MP Estilista" }],
+    images: [
+      {
+        url: ogImageAbsolute,
+        secureUrl: ogImageAbsolute,
+        width: 1200,
+        height: 630,
+        alt: "MP Estilista",
+        type: "image/jpeg",
+      },
+    ],
   },
   twitter: {
     card: "summary_large_image",
-    images: ["/og-image.jpg?v=1"],
+    images: [ogImageAbsolute],
   },
 };
 

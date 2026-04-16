@@ -52,15 +52,17 @@ async function paddedSquare(size, filename) {
 async function main() {
   await ensureSourceLogo();
 
-  await pipeline()
-    .resize(32, 32, { fit: "cover", position: "centre" })
-    .png({ compressionLevel: 9, effort: 10 })
-    .toFile(path.join(outDir, "favicon-32.png"));
-
-  await pipeline()
-    .resize(16, 16, { fit: "cover", position: "centre" })
-    .png({ compressionLevel: 9, effort: 10 })
-    .toFile(path.join(outDir, "favicon-16.png"));
+  for (const [size, name] of [
+    [64, "favicon-64.png"],
+    [48, "favicon-48.png"],
+    [32, "favicon-32.png"],
+    [16, "favicon-16.png"],
+  ]) {
+    await pipeline()
+      .resize(size, size, { fit: "cover", position: "centre" })
+      .png({ compressionLevel: 9, effort: 10 })
+      .toFile(path.join(outDir, name));
+  }
 
   await paddedSquare(180, "apple-touch-icon.png");
   await paddedSquare(192, "icon-192.png");
@@ -86,6 +88,8 @@ async function main() {
     .toFile(path.join(outDir, "og-image.jpg"));
 
   console.log("[icons] OK:", [
+    "favicon-64.png",
+    "favicon-48.png",
     "favicon-32.png",
     "favicon-16.png",
     "apple-touch-icon.png",
