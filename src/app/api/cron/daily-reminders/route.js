@@ -3,20 +3,21 @@ import { formatInTimeZone, fromZonedTime, toZonedTime } from "date-fns-tz";
 import { NextResponse } from "next/server";
 
 import { getDb } from "@/lib/mongodb";
-import { sendReminder } from "@/lib/reminders";
 import { getTwilioClient } from "@/lib/twilio";
 
 const TZ = "America/Argentina/Buenos_Aires";
 
 function normalizeTo(to) {
-  const digits = String(to ?? "").replace(/\D/g, "");
-  if (!digits) throw new Error("appointment.clientPhone inválido");
+  // normaliza a +549 para celulares argentinos
+  let phone = String(to ?? "").replace(/\D/g, ""); // saca espacios
+  if (!phone) throw new Error("appointment.clientPhone inválido");
+  if (phone.startsWith("549")) phone = phone;
+  else if (phone.startsWith("54")) phone = `549${phone.slice(2)}`;
+  else if (phone.startsWith("9")) phone = `54${phone}`;
+  else phone = `549${phone}`;
 
-  let local = digits;
-  if (local.startsWith("54")) local = local.slice(2);
-  if (local.startsWith("9")) local = local.slice(1);
-
-  return `whatsapp:+54${local}`;
+  const toWhatsApp = `whatsapp:+${phone}`;
+  return toWhatsApp;
 }
 
 function buildTomorrowRangeInArgentina(now = new Date()) {
@@ -83,25 +84,25 @@ export async function GET(request) {
       }
 
       try {
-        const appointmentForReminder = {
-          ...appointment,
-          name: appointment.clientName,
-          date: formatInTimeZone(appointment.startsAt, TZ, "dd/MM/yyyy"),
-          time: formatInTimeZone(appointment.startsAt, TZ, "HH:mm"),
-        };
-        const message = sendReminder(appointmentForReminder);
+        const nombre = appointment.clientName ?? "";
+        const servicio = appointment.treatmentName ?? appointment.serviceName ?? "";
+        const fecha = formatInTimeZone(appointment.startsAt, TZ, "dd/MM/yyyy");
+        const hora = formatInTimeZone(appointment.startsAt, TZ, "HH:mm");
 
         const twilioResponse = await client.messages.create({
           from: process.env.TWILIO_WHATSAPP_FROM,
           to: normalizeTo(appointment.clientPhone),
-          body: message,
+          contentSid: process.env.TWILIO_REMINDER_CONTENT_SID,
+          contentVariables: JSON.stringify({ "1": nombre, "2": servicio, "3": fecha, "4": hora }),
         });
 
         await logsCol.insertOne({
           to: appointment.clientPhone,
-          message,
+          message: "",
           sid: twilioResponse.sid,
           status: twilioResponse.status,
+          template: process.env.TWILIO_REMINDER_CONTENT_SID ?? null,
+          templateVariables: { nombre, servicio, fecha, hora },
           createdAt: new Date(),
         });
 

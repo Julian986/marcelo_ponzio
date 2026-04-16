@@ -16,7 +16,7 @@ export function getAppBaseUrl(): string {
 }
 
 export function getDepositAmountArs(): number {
-  const raw = process.env.MERCADOPAGO_DEPOSIT_AMOUNT_ARS ?? "5000";
+  const raw = process.env.MERCADOPAGO_DEPOSIT_AMOUNT_ARS ?? "20000";
   const n = Number(raw);
   if (!Number.isFinite(n) || n <= 0) {
     throw new Error("MERCADOPAGO_DEPOSIT_AMOUNT_ARS inválido");
