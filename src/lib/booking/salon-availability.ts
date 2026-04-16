@@ -20,8 +20,8 @@ export const SALON_TREATMENT_OPTIONS: SalonTreatmentOption[] = SALON_TREATMENTS.
   category: t.category,
 }));
 
-/** Minuto del día (0–24h) en que debe haber terminado el servicio (16:30 permite keratina 15:30 + 1 h). */
-export const SALON_LAST_SERVICE_END_MINUTES = 16 * 60 + 30;
+/** Minuto del día (0–24h): el servicio debe *terminar* a esta hora o antes (16:00 = cierre puntual). */
+export const SALON_LAST_SERVICE_END_MINUTES = 16 * 60;
 
 const SLOT_STEP_MINUTES = 30;
 

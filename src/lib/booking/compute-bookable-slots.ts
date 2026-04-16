@@ -3,10 +3,7 @@ import type { Db } from "mongodb";
 import { getAvailableTimesForDate, filterSlotsServiceEndsOnOrBeforeClose } from "@/lib/booking/salon-availability";
 import { getPublicBookableTimeSlots } from "@/lib/booking/public-slot-lead";
 import { filterPublicSlotsByTreatmentRules } from "@/lib/booking/treatment-slot-rules";
-import {
-  filterSlotsWithoutOverlap,
-  loadBusyIntervalsMs,
-} from "@/lib/booking/slot-overlap";
+import { filterSlotsBySalonCapacity, loadBusyIntervalsMs } from "@/lib/booking/slot-overlap";
 import { findSalonTreatmentById } from "@/lib/treatments/catalog";
 
 export type BookingSlotScope = "public" | "panel";
@@ -29,5 +26,5 @@ export async function computeBookableSlots(
   slots = filterSlotsServiceEndsOnOrBeforeClose(slots, treatment.durationMinutes);
   slots = filterPublicSlotsByTreatmentRules(treatment.id, slots);
   const busy = await loadBusyIntervalsMs(db, params.dateKey);
-  return filterSlotsWithoutOverlap(slots, params.dateKey, treatment.durationMinutes, busy);
+  return filterSlotsBySalonCapacity(slots, params.dateKey, treatment.durationMinutes, busy);
 }

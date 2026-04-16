@@ -14,7 +14,11 @@ const TREATMENT_IDS_START_NO_LATER_THAN_14 = new Set<string>([
   "color-retoque-reflejos",
 ]);
 
-export const KERATINA_ONLY_TIME_LOCAL = "15:30";
+/**
+ * Único inicio permitido para keratina (reserva pública).
+ * Con cierre 16:00 y servicio de 1 h, 15:30 ya no entra; queda 15:00.
+ */
+export const KERATINA_ONLY_TIME_LOCAL = "15:00";
 
 export function treatmentRequiresStartNoLaterThan14(treatmentId: string): boolean {
   return TREATMENT_IDS_START_NO_LATER_THAN_14.has(treatmentId);

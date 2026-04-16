@@ -5,7 +5,7 @@ import { MongoServerError, ObjectId as ObjectIdCtor } from "mongodb";
 import { computeBookableSlots } from "@/lib/booking/compute-bookable-slots";
 import { formatSalonDisplayDate } from "@/lib/booking/salon-availability";
 import { isPublicLeadTimeViolated } from "@/lib/booking/public-slot-lead";
-import { reservationIntervalOverlapsExisting, slotIntervalMs } from "@/lib/booking/slot-overlap";
+import { reservationWouldExceedSalonCapacity, slotIntervalMs } from "@/lib/booking/slot-overlap";
 import { SALON_TREATMENTS, findSalonTreatmentById } from "@/lib/treatments/catalog";
 
 import type { CreateReservationInput, MpWebhookEventDoc, ReservationDoc, ReservationStatus } from "./types";
@@ -31,29 +31,27 @@ function pendingTtlMs(): number {
   return n * 60 * 1000;
 }
 
-let indexesEnsured = false;
+/** Subir si cambia la definición de índices (p. ej. quitar unique en startsAt para doble turno 9–11:30). */
+const RESERVATION_INDEXES_VERSION = 2;
+let reservationIndexesVersionApplied = 0;
 
 export async function ensureReservationIndexes(db: Db) {
-  if (indexesEnsured) return;
+  if (reservationIndexesVersionApplied >= RESERVATION_INDEXES_VERSION) return;
   const col = db.collection(COLLECTION);
   const logs = db.collection(WEBHOOK_LOGS);
 
   try {
     await col.dropIndex("uniq_startsAt");
   } catch {
-    /* no existe en deploys nuevos */
+    /* no existe */
+  }
+  try {
+    await col.dropIndex("uniq_startsAt_active_pending_or_confirmed");
+  } catch {
+    /* no existe */
   }
 
-  await col.createIndex(
-    { startsAt: 1 },
-    {
-      unique: true,
-      partialFilterExpression: {
-        reservationStatus: { $in: ["pending_payment", "confirmed"] },
-      },
-      name: "uniq_startsAt_active_pending_or_confirmed",
-    },
-  );
+  await col.createIndex({ startsAt: 1 }, { name: "by_startsAt" });
   await col.createIndex({ createdAt: -1 }, { name: "by_created" });
   await col.createIndex({ reservationStatus: 1, startsAt: 1 }, { name: "by_status_starts" });
   await col.createIndex({ externalReference: 1 }, { sparse: true, name: "by_external_ref" });
@@ -62,7 +60,7 @@ export async function ensureReservationIndexes(db: Db) {
   await logs.createIndex({ receivedAt: -1 }, { name: "mp_logs_received" });
   await logs.createIndex({ resourceId: 1, receivedAt: -1 }, { name: "mp_logs_resource" });
 
-  indexesEnsured = true;
+  reservationIndexesVersionApplied = RESERVATION_INDEXES_VERSION;
 }
 
 export async function insertPendingReservation(
@@ -109,9 +107,9 @@ export async function insertPendingReservation(
   if (!interval) {
     return { error: "Fecha u horario inválidos.", code: "INVALID_SLOT" };
   }
-  if (await reservationIntervalOverlapsExisting(db, input.dateKey, interval)) {
+  if (await reservationWouldExceedSalonCapacity(db, input.dateKey, interval)) {
     return {
-      error: "Ese horario ya no está disponible (se solapa con otro turno).",
+      error: "Ese horario ya no está disponible (cupos llenos en esa franja).",
       code: "SLOT_OVERLAP",
     };
   }
@@ -173,8 +171,7 @@ export type PanelReservationInsertInput = {
 const PANEL_NOTES_MAX_LEN = 2000;
 
 /**
- * Alta manual desde el panel (sin Mercado Pago). Respeta el índice único de `startsAt`
- * para reservas activas (pending_payment | confirmed).
+ * Alta manual desde el panel (sin Mercado Pago). Valida cupos (9–11:30: hasta 2 turnos solapados).
  */
 export async function insertPanelReservation(
   db: Db,
@@ -210,9 +207,9 @@ export async function insertPanelReservation(
   if (!interval) {
     return { error: "Fecha u horario inválidos.", code: "INVALID_SLOT" };
   }
-  if (await reservationIntervalOverlapsExisting(db, dateKey, interval)) {
+  if (await reservationWouldExceedSalonCapacity(db, dateKey, interval)) {
     return {
-      error: "Ese horario se solapa con otro turno. Elegí otro.",
+      error: "Ese horario ya no tiene cupo en esa franja. Elegí otro.",
       code: "SLOT_OVERLAP",
     };
   }

@@ -1,9 +1,15 @@
 import type { Db } from "mongodb";
+import { formatInTimeZone } from "date-fns-tz";
 
+import { RESERVATION_TZ } from "@/lib/booking/public-slot-lead";
 import { findSalonTreatmentById } from "@/lib/treatments/catalog";
 
 const COLLECTION = "reservations";
 const ACTIVE_STATUSES = ["pending_payment", "confirmed"] as const;
+
+/** Inicio/fin (minutos desde medianoche ART) con hasta 2 turnos simultáneos. Inclusive 11:30. */
+const DOUBLE_CAPACITY_START_MIN = 9 * 60;
+const DOUBLE_CAPACITY_END_MIN = 11 * 60 + 30;
 
 export type IntervalMs = { startMs: number; endMs: number };
 
@@ -25,6 +31,17 @@ export function slotIntervalMs(
   const startMs = d.getTime();
   const endMs = startMs + durationMinutes * 60_000;
   return { startMs, endMs };
+}
+
+/** Capacidad del salón en ese instante: 2 entre 9:00 y 11:30 (ART, mismo dateKey), 1 fuera. */
+export function salonConcurrentCapAtInstant(dateKey: string, instantMs: number): number {
+  const dayKey = formatInTimeZone(new Date(instantMs), RESERVATION_TZ, "yyyy-MM-dd");
+  if (dayKey !== dateKey) return 1;
+  const hm = formatInTimeZone(new Date(instantMs), RESERVATION_TZ, "HH:mm");
+  const [h, m] = hm.split(":").map(Number);
+  const mins = h * 60 + m;
+  if (mins >= DOUBLE_CAPACITY_START_MIN && mins <= DOUBLE_CAPACITY_END_MIN) return 2;
+  return 1;
 }
 
 function durationForReservationRow(r: {
@@ -56,7 +73,54 @@ export async function loadBusyIntervalsMs(db: Db, dateKey: string): Promise<Inte
   });
 }
 
-export function filterSlotsWithoutOverlap(
+function capacityBoundaryInstantsMs(dateKey: string): number[] {
+  return [
+    new Date(`${dateKey}T09:00:00-03:00`).getTime(),
+    new Date(`${dateKey}T11:31:00-03:00`).getTime(),
+  ];
+}
+
+/**
+ * ¿Se puede agregar este intervalo sin superar la capacidad por franja?
+ * Entre 9:00 y 11:30 ART pueden convivir hasta 2 turnos que se solapen; fuera, 1.
+ */
+export function canPlaceReservationSlot(dateKey: string, candidate: IntervalMs, busy: IntervalMs[]): boolean {
+  const relevant = busy.filter((b) => intervalsOverlap(b, candidate));
+  const points = new Set<number>([candidate.startMs, candidate.endMs]);
+  for (const b of relevant) {
+    const s = Math.max(b.startMs, candidate.startMs);
+    const e = Math.min(b.endMs, candidate.endMs);
+    if (s < e) {
+      points.add(s);
+      points.add(e);
+    }
+  }
+  for (const bt of capacityBoundaryInstantsMs(dateKey)) {
+    if (bt > candidate.startMs && bt < candidate.endMs) {
+      points.add(bt);
+    }
+  }
+
+  const sorted = [...points].sort((a, b) => a - b);
+  for (let i = 0; i < sorted.length - 1; i++) {
+    const t0 = sorted[i];
+    const t1 = sorted[i + 1];
+    if (t1 <= t0) continue;
+    const lo = Math.max(t0, candidate.startMs);
+    const hi = Math.min(t1, candidate.endMs);
+    if (hi <= lo) continue;
+    const mid = (lo + hi) / 2;
+    const cap = salonConcurrentCapAtInstant(dateKey, mid);
+    let depth = 0;
+    for (const b of relevant) {
+      if (b.startMs < hi && b.endMs > lo) depth++;
+    }
+    if (depth + 1 > cap) return false;
+  }
+  return true;
+}
+
+export function filterSlotsBySalonCapacity(
   slots: string[],
   dateKey: string,
   durationMinutes: number,
@@ -65,15 +129,15 @@ export function filterSlotsWithoutOverlap(
   return slots.filter((timeLocal) => {
     const slot = slotIntervalMs(dateKey, timeLocal, durationMinutes);
     if (!slot) return false;
-    return !busy.some((b) => intervalsOverlap(slot, b));
+    return canPlaceReservationSlot(dateKey, slot, busy);
   });
 }
 
-export async function reservationIntervalOverlapsExisting(
+export async function reservationWouldExceedSalonCapacity(
   db: Db,
   dateKey: string,
   candidate: IntervalMs,
 ): Promise<boolean> {
   const busy = await loadBusyIntervalsMs(db, dateKey);
-  return busy.some((b) => intervalsOverlap(candidate, b));
+  return !canPlaceReservationSlot(dateKey, candidate, busy);
 }
