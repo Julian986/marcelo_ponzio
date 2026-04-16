@@ -6,7 +6,8 @@
     "dev": "next dev -p 7420 --webpack",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "icons": "node scripts/generate-icons.mjs"
   },
   "dependencies": {
     "date-fns-tz": "^3.2.0",
@@ -18,6 +19,7 @@
     "twilio": "^5.13.1"
   },
   "devDependencies": {
+    "sharp": "^0.34.5",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
     "@types/react": "^19",
