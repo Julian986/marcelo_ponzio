@@ -14,6 +14,8 @@ export type ReservationStatus =
 /** Estado del cobro de seña / total (Mercado Pago) */
 export type PaymentStatus = "not_required" | "pending" | "simulated_paid" | "approved" | "failed" | "refunded";
 
+export type ReservationSource = "app_turnos" | "panel";
+
 export type ReservationDoc = {
   _id: ObjectId;
   treatmentId: string;
@@ -29,7 +31,11 @@ export type ReservationDoc = {
   whatsappOptIn: boolean;
   reservationStatus: ReservationStatus;
   paymentStatus: PaymentStatus;
-  source: "app_turnos";
+  source: ReservationSource;
+  /** Quién creó la reserva desde el panel (no hay multi-usuario: default "panel" o env). */
+  createdBy?: string | null;
+  /** Notas internas solo para reservas cargadas desde el panel. */
+  panelNotes?: string | null;
   createdAt: Date;
   updatedAt: Date;
   /** Secreto de un solo uso para crear la preferencia Checkout Pro (no es password del usuario). */

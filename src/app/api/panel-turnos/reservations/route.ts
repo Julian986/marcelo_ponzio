@@ -18,6 +18,7 @@ function serialize(r: ReservationDoc) {
     customerPhone: r.customerPhone,
     reservationStatus: r.reservationStatus,
     paymentStatus: r.paymentStatus,
+    source: r.source ?? "app_turnos",
     externalReference: r.externalReference ?? null,
     preferenceId: r.preferenceId ?? null,
     mpPaymentId: r.mpPaymentId ?? null,

@@ -60,7 +60,7 @@ export async function GET(request) {
       .find({
         startsAt: { $gte: startUtc, $lte: endUtc },
         reservationStatus: "confirmed",
-        paymentStatus: "approved",
+        paymentStatus: { $in: ["approved", "not_required"] },
         whatsappOptIn: true,
         waReminder24hSentAt: null,
         customerPhone: { $exists: true, $nin: [null, ""] },
@@ -76,7 +76,7 @@ export async function GET(request) {
         {
           _id: reservation._id,
           reservationStatus: "confirmed",
-          paymentStatus: "approved",
+          paymentStatus: { $in: ["approved", "not_required"] },
           whatsappOptIn: true,
           waReminder24hSentAt: null,
           customerPhone: { $exists: true, $nin: [null, ""] },

@@ -1,6 +1,10 @@
 import { randomBytes } from "crypto";
 import type { Db, ObjectId } from "mongodb";
 import { MongoServerError, ObjectId as ObjectIdCtor } from "mongodb";
+
+import { getAvailableTimesForDate, formatSalonDisplayDate } from "@/lib/booking/salon-availability";
+import { SALON_TREATMENTS } from "@/lib/treatments/catalog";
+
 import type { CreateReservationInput, MpWebhookEventDoc, ReservationDoc, ReservationStatus } from "./types";
 
 const COLLECTION = "reservations";
@@ -109,6 +113,110 @@ export async function insertPendingReservation(
     if (e instanceof MongoServerError && e.code === 11000) {
       return {
         error: "Ese horario ya está ocupado o tiene una reserva pendiente. Elegí otro día u horario.",
+        code: "SLOT_TAKEN",
+      };
+    }
+    throw e;
+  }
+}
+
+export type PanelReservationInsertInput = {
+  treatmentId: string;
+  dateKey: string;
+  timeLocal: string;
+  customerName: string;
+  customerPhone: string;
+  whatsappOptIn: boolean;
+  panelNotes?: string | null;
+};
+
+const PANEL_NOTES_MAX_LEN = 2000;
+
+/**
+ * Alta manual desde el panel (sin Mercado Pago). Respeta el índice único de `startsAt`
+ * para reservas activas (pending_payment | confirmed).
+ */
+export async function insertPanelReservation(
+  db: Db,
+  input: PanelReservationInsertInput,
+): Promise<{ ok: true; id: string } | { error: string; code?: string }> {
+  const treatment = SALON_TREATMENTS.find((t) => t.id === input.treatmentId.trim());
+  if (!treatment) {
+    return { error: "Tratamiento inválido.", code: "INVALID_TREATMENT" };
+  }
+
+  const dateKey = input.dateKey.trim();
+  const timeLocal = input.timeLocal.trim();
+  const startsAt = computeStartsAtUtc(dateKey, timeLocal);
+  if (!startsAt) {
+    return { error: "Fecha u horario inválidos.", code: "INVALID_SLOT" };
+  }
+
+  const allowedTimes = getAvailableTimesForDate(dateKey);
+  if (!allowedTimes.includes(timeLocal)) {
+    return { error: "Ese horario no está disponible.", code: "SLOT_UNAVAILABLE" };
+  }
+
+  let panelNotes: string | null = null;
+  if (input.panelNotes != null && String(input.panelNotes).trim()) {
+    const t = String(input.panelNotes).trim();
+    if (t.length > PANEL_NOTES_MAX_LEN) {
+      return { error: `Las notas no pueden superar ${PANEL_NOTES_MAX_LEN} caracteres.` };
+    }
+    panelNotes = t;
+  }
+
+  const now = new Date();
+  const displayDate = formatSalonDisplayDate(dateKey);
+  const createdBy = (process.env.PANEL_TURNOS_CREATED_BY ?? "panel").trim() || "panel";
+
+  const doc = {
+    treatmentId: treatment.id,
+    treatmentName: treatment.name,
+    subtitle: treatment.subtitle,
+    category: treatment.category,
+    dateKey,
+    timeLocal,
+    displayDate,
+    startsAt,
+    customerName: input.customerName.trim(),
+    customerPhone: input.customerPhone.trim(),
+    whatsappOptIn: input.whatsappOptIn === true,
+    reservationStatus: "confirmed" as const,
+    paymentStatus: "not_required" as const,
+    source: "panel" as const,
+    createdBy,
+    panelNotes,
+    createdAt: now,
+    updatedAt: now,
+  } satisfies Omit<
+    ReservationDoc,
+    | "_id"
+    | "externalReference"
+    | "preferenceId"
+    | "mpPaymentId"
+    | "checkoutToken"
+    | "paymentDeadlineAt"
+    | "mpPaymentStatusLast"
+    | "mpPaymentApprovedAt"
+    | "cancelReason"
+    | "waReminder24hSentAt"
+  >;
+
+  await ensureReservationIndexes(db);
+
+  try {
+    const result = await db.collection(COLLECTION).insertOne(doc);
+    const id = result.insertedId.toHexString();
+    await db.collection(COLLECTION).updateOne(
+      { _id: result.insertedId },
+      { $set: { externalReference: id, updatedAt: new Date() } },
+    );
+    return { ok: true, id };
+  } catch (e) {
+    if (e instanceof MongoServerError && e.code === 11000) {
+      return {
+        error: "Ese horario ya está ocupado. Elegí otro.",
         code: "SLOT_TAKEN",
       };
     }

@@ -30,6 +30,7 @@ export type PanelReservation = {
   customerPhone: string;
   reservationStatus: string;
   paymentStatus: string;
+  source?: string;
   startsAt: string;
   createdAt: string;
 };
@@ -276,7 +277,7 @@ export function PanelTurnosDashboard() {
             </div>
           </div>
           <Link
-            href="/turnos"
+            href="/panel-turnos/nuevo"
             className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-[var(--premium-gold)]/35 bg-[#171717] text-[var(--premium-gold)] shadow-[0_6px_22px_rgba(0,0,0,0.35)] hover:bg-[#1d1d1d]"
             aria-label="Agregar turno"
           >
@@ -403,6 +404,11 @@ export function PanelTurnosDashboard() {
                         </p>
                         <div className="mt-2 flex flex-wrap items-center gap-2">
                           <StatusBadge reservationStatus={r.reservationStatus} paymentStatus={r.paymentStatus} />
+                          {r.source === "panel" ? (
+                            <span className="inline-block rounded-full bg-sky-500/14 px-2.5 py-1 text-[11px] font-semibold tracking-wide text-sky-200/95">
+                              Manual
+                            </span>
+                          ) : null}
                           {waUrl ? (
                             <a
                               href={waUrl}
