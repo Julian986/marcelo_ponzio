@@ -202,10 +202,10 @@ export const SALON_TREATMENTS: SalonTreatment[] = [
     name: "Planchado",
     subtitle: "1 h",
     description: "Planchado. Lavado incluido.",
-    category: "Cortes y peinado",
+    category: "Tratamiento",
     durationLabel: "1 h",
     durationMinutes: 60,
-    imageUrl: IMG.peinado,
+    imageUrl: IMG.trat,
   },
   {
     id: "keratina",
