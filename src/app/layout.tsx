@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Montserrat, Playfair_Display } from "next/font/google";
 import { headers } from "next/headers";
 import { BRAND_LOGO_SRC } from "@/components/brand-logo";
+import { GoogleAnalytics } from "@/components/GoogleAnalytics";
 import { resolvePublicSiteOrigin } from "@/lib/site-origin";
 import "./globals.css";
 
@@ -83,6 +84,7 @@ export default function RootLayout({
       <body
         className={`${montserrat.variable} ${playfair.variable} min-h-screen bg-[#111111] text-white antialiased`}
       >
+        <GoogleAnalytics />
         {children}
       </body>
     </html>

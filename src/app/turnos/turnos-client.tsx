@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { BookingPicker } from "@/components/booking/booking-picker";
+import { event as gaEvent } from "@/lib/gtag";
 import {
   SALON_TREATMENT_OPTIONS,
   formatSalonDisplayDate,
@@ -215,6 +216,12 @@ export default function TurnosClient({ initialTreatment = "" }: TurnosClientProp
         id: dataPending.id,
       };
       sessionStorage.setItem("mp_turno_snapshot", JSON.stringify(snapshot));
+      gaEvent("reservation_checkout_start", {
+        treatment_id: selectedTreatment.id,
+        treatment_name: selectedTreatment.name,
+        date_key: selectedDate,
+        time_local: selectedTime,
+      });
       window.location.href = dataPref.initPoint;
     } catch {
       setConfirmError("Sin conexión o error de red. Probá de nuevo.");
