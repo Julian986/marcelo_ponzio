@@ -6,7 +6,7 @@ import { computeBookableSlots } from "@/lib/booking/compute-bookable-slots";
 import { formatSalonDisplayDate } from "@/lib/booking/salon-availability";
 import { isPublicLeadTimeViolated } from "@/lib/booking/public-slot-lead";
 import { reservationWouldExceedSalonCapacity, slotIntervalMs } from "@/lib/booking/slot-overlap";
-import { SALON_TREATMENTS, findSalonTreatmentById } from "@/lib/treatments/catalog";
+import { SALON_TREATMENTS, findSalonTreatmentById, type SalonTreatment } from "@/lib/treatments/catalog";
 
 import type { CreateReservationInput, MpWebhookEventDoc, ReservationDoc, ReservationStatus } from "./types";
 
@@ -63,26 +63,28 @@ export async function ensureReservationIndexes(db: Db) {
   reservationIndexesVersionApplied = RESERVATION_INDEXES_VERSION;
 }
 
-export async function insertPendingReservation(
+type PublicTurnosValidation =
+  | { ok: true; treatment: SalonTreatment; startsAt: Date; now: Date }
+  | { ok: false; error: string; code?: string };
+
+async function validatePublicTurnosReservation(
   db: Db,
   input: CreateReservationInput,
-): Promise<
-  | { id: string; checkoutToken: string; externalReference: string }
-  | { error: string; code?: string }
-> {
+): Promise<PublicTurnosValidation> {
   const treatment = findSalonTreatmentById(input.treatmentId.trim());
   if (!treatment) {
-    return { error: "Tratamiento inválido.", code: "INVALID_TREATMENT" };
+    return { ok: false, error: "Tratamiento inválido.", code: "INVALID_TREATMENT" };
   }
 
   const startsAt = computeStartsAtUtc(input.dateKey, input.timeLocal);
   if (!startsAt) {
-    return { error: "Fecha u horario inválidos.", code: "INVALID_SLOT" };
+    return { ok: false, error: "Fecha u horario inválidos.", code: "INVALID_SLOT" };
   }
 
   const now = new Date();
   if (isPublicLeadTimeViolated(input.dateKey, startsAt, now)) {
     return {
+      ok: false,
       error: "Para hoy, los turnos deben reservarse con al menos 1 hora de anticipación.",
       code: "LEAD_TIME",
     };
@@ -98,6 +100,7 @@ export async function insertPendingReservation(
   });
   if (!allowedPublic.includes(input.timeLocal.trim())) {
     return {
+      ok: false,
       error: "Ese horario no está disponible para este servicio.",
       code: "SLOT_UNAVAILABLE",
     };
@@ -105,14 +108,29 @@ export async function insertPendingReservation(
 
   const interval = slotIntervalMs(input.dateKey, input.timeLocal.trim(), treatment.durationMinutes);
   if (!interval) {
-    return { error: "Fecha u horario inválidos.", code: "INVALID_SLOT" };
+    return { ok: false, error: "Fecha u horario inválidos.", code: "INVALID_SLOT" };
   }
   if (await reservationWouldExceedSalonCapacity(db, input.dateKey, interval)) {
     return {
+      ok: false,
       error: "Ese horario ya no está disponible (cupos llenos en esa franja).",
       code: "SLOT_OVERLAP",
     };
   }
+
+  return { ok: true, treatment, startsAt, now };
+}
+
+export async function insertPendingReservation(
+  db: Db,
+  input: CreateReservationInput,
+): Promise<
+  | { id: string; checkoutToken: string; externalReference: string }
+  | { error: string; code?: string }
+> {
+  const v = await validatePublicTurnosReservation(db, input);
+  if (!v.ok) return { error: v.error, code: v.code };
+  const { treatment, startsAt, now } = v;
 
   const checkoutToken = randomBytes(32).toString("hex");
   const paymentDeadlineAt = new Date(now.getTime() + pendingTtlMs());
@@ -147,6 +165,74 @@ export async function insertPendingReservation(
       { $set: { externalReference: id, updatedAt: new Date() } },
     );
     return { id, checkoutToken, externalReference: id };
+  } catch (e) {
+    if (e instanceof MongoServerError && e.code === 11000) {
+      return {
+        error: "Ese horario ya está ocupado o tiene una reserva pendiente. Elegí otro día u horario.",
+        code: "SLOT_TAKEN",
+      };
+    }
+    throw e;
+  }
+}
+
+/**
+ * Reserva desde la app pública sin seña: confirmada de inmediato (recordatorios vía cron igual que panel).
+ */
+export async function insertPublicConfirmedReservationWithoutPayment(
+  db: Db,
+  input: CreateReservationInput,
+): Promise<{ ok: true; id: string; externalReference: string } | { error: string; code?: string }> {
+  const v = await validatePublicTurnosReservation(db, input);
+  if (!v.ok) return { error: v.error, code: v.code };
+  const { treatment, startsAt, now } = v;
+
+  const dateKey = input.dateKey.trim();
+  const timeLocal = input.timeLocal.trim();
+  const displayDate = formatSalonDisplayDate(dateKey);
+
+  const doc = {
+    treatmentId: treatment.id,
+    treatmentName: treatment.name,
+    subtitle: treatment.subtitle,
+    category: treatment.category,
+    dateKey,
+    timeLocal,
+    displayDate,
+    startsAt,
+    durationMinutes: treatment.durationMinutes,
+    customerName: input.customerName.trim(),
+    customerPhone: input.customerPhone.trim(),
+    whatsappOptIn: input.whatsappOptIn === true,
+    reservationStatus: "confirmed" as const,
+    paymentStatus: "not_required" as const,
+    source: "app_turnos" as const,
+    createdAt: now,
+    updatedAt: now,
+  } satisfies Omit<
+    ReservationDoc,
+    | "_id"
+    | "externalReference"
+    | "preferenceId"
+    | "mpPaymentId"
+    | "checkoutToken"
+    | "paymentDeadlineAt"
+    | "mpPaymentStatusLast"
+    | "mpPaymentApprovedAt"
+    | "cancelReason"
+    | "waReminder24hSentAt"
+    | "createdBy"
+    | "panelNotes"
+  >;
+
+  try {
+    const result = await db.collection(COLLECTION).insertOne(doc);
+    const id = result.insertedId.toHexString();
+    await db.collection(COLLECTION).updateOne(
+      { _id: result.insertedId },
+      { $set: { externalReference: id, updatedAt: new Date() } },
+    );
+    return { ok: true, id, externalReference: id };
   } catch (e) {
     if (e instanceof MongoServerError && e.code === 11000) {
       return {

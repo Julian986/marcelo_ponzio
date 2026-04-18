@@ -1,7 +1,12 @@
 import { NextResponse } from "next/server";
 import { getDb } from "@/lib/mongodb";
 import { parseCreateReservationBody } from "@/lib/reservations/parse-body";
-import { insertPendingReservation } from "@/lib/reservations/service";
+import { treatmentRequiresPublicDeposit } from "@/lib/reservations/public-deposit";
+import { findSalonTreatmentById } from "@/lib/treatments/catalog";
+import {
+  insertPendingReservation,
+  insertPublicConfirmedReservationWithoutPayment,
+} from "@/lib/reservations/service";
 
 export const dynamic = "force-dynamic";
 
@@ -20,18 +25,40 @@ export async function POST(request: Request) {
 
   try {
     const db = await getDb();
-    const result = await insertPendingReservation(db, parsed.value);
+    const treatment = findSalonTreatmentById(parsed.value.treatmentId.trim());
+    if (!treatment) {
+      return NextResponse.json({ error: "Tratamiento inválido.", code: "INVALID_TREATMENT" }, { status: 400 });
+    }
 
+    const needsDeposit = treatmentRequiresPublicDeposit(treatment.id);
+
+    if (needsDeposit) {
+      const result = await insertPendingReservation(db, parsed.value);
+      if ("error" in result) {
+        const status = result.code === "SLOT_TAKEN" ? 409 : 400;
+        return NextResponse.json({ error: result.error, code: result.code }, { status });
+      }
+      return NextResponse.json(
+        {
+          id: result.id,
+          checkoutToken: result.checkoutToken,
+          externalReference: result.externalReference,
+          bookingMode: "pending_payment" as const,
+        },
+        { status: 201 },
+      );
+    }
+
+    const result = await insertPublicConfirmedReservationWithoutPayment(db, parsed.value);
     if ("error" in result) {
       const status = result.code === "SLOT_TAKEN" ? 409 : 400;
       return NextResponse.json({ error: result.error, code: result.code }, { status });
     }
-
     return NextResponse.json(
       {
         id: result.id,
-        checkoutToken: result.checkoutToken,
         externalReference: result.externalReference,
+        bookingMode: "confirmed" as const,
       },
       { status: 201 },
     );
