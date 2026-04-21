@@ -182,7 +182,12 @@ export function formatSalonDisplayDate(value: string) {
   return `${salonWeekdayLabels[date.getDay()]}, ${day} ${salonMonthNames[month - 1].slice(0, 3).toLowerCase()}`;
 }
 
+/** Solo dígitos, para cruzar reservas con el mismo WhatsApp aunque el formato varíe. */
+export function normalizePhoneDigits(raw: string): string {
+  return raw.replace(/\D/g, "");
+}
+
 export function isLikelyWhatsappNumber(raw: string): boolean {
-  const digits = raw.replace(/\D/g, "");
+  const digits = normalizePhoneDigits(raw);
   return digits.length >= 10 && digits.length <= 15;
 }

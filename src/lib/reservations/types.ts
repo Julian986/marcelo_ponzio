@@ -30,6 +30,8 @@ export type ReservationDoc = {
   durationMinutes?: number;
   customerName: string;
   customerPhone: string;
+  /** Solo dígitos; índice para “mis turnos”. Opcional en documentos viejos hasta backfill. */
+  customerPhoneDigits?: string;
   whatsappOptIn: boolean;
   reservationStatus: ReservationStatus;
   paymentStatus: PaymentStatus;

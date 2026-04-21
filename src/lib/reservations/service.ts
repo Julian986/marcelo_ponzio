@@ -4,10 +4,12 @@ import { MongoServerError, ObjectId as ObjectIdCtor } from "mongodb";
 
 import { buildCapGetterForDate } from "@/lib/booking/agenda-blocks";
 import { computeBookableSlots } from "@/lib/booking/compute-bookable-slots";
-import { formatSalonDisplayDate } from "@/lib/booking/salon-availability";
+import { formatSalonDisplayDate, normalizePhoneDigits } from "@/lib/booking/salon-availability";
 import { isPublicLeadTimeViolated } from "@/lib/booking/public-slot-lead";
 import { reservationWouldExceedSalonCapacity, slotIntervalMs } from "@/lib/booking/slot-overlap";
 import { SALON_TREATMENTS, findSalonTreatmentById, type SalonTreatment } from "@/lib/treatments/catalog";
+
+import { backfillCustomerPhoneDigitsBatch } from "@/lib/reservations/customer-queries";
 
 import type { CreateReservationInput, MpWebhookEventDoc, ReservationDoc, ReservationStatus } from "./types";
 
@@ -33,7 +35,7 @@ function pendingTtlMs(): number {
 }
 
 /** Subir si cambia la definición de índices (p. ej. quitar unique en startsAt para doble turno 9–11:30). */
-const RESERVATION_INDEXES_VERSION = 2;
+const RESERVATION_INDEXES_VERSION = 3;
 let reservationIndexesVersionApplied = 0;
 
 export async function ensureReservationIndexes(db: Db) {
@@ -57,9 +59,15 @@ export async function ensureReservationIndexes(db: Db) {
   await col.createIndex({ reservationStatus: 1, startsAt: 1 }, { name: "by_status_starts" });
   await col.createIndex({ externalReference: 1 }, { sparse: true, name: "by_external_ref" });
   await col.createIndex({ paymentDeadlineAt: 1 }, { sparse: true, name: "by_payment_deadline" });
+  await col.createIndex({ customerPhoneDigits: 1, startsAt: -1 }, { name: "by_customer_phone_starts" });
 
   await logs.createIndex({ receivedAt: -1 }, { name: "mp_logs_received" });
   await logs.createIndex({ resourceId: 1, receivedAt: -1 }, { name: "mp_logs_resource" });
+
+  for (let i = 0; i < 20; i++) {
+    const n = await backfillCustomerPhoneDigitsBatch(db, 250);
+    if (n === 0) break;
+  }
 
   reservationIndexesVersionApplied = RESERVATION_INDEXES_VERSION;
 }
@@ -149,6 +157,7 @@ export async function insertPendingReservation(
     durationMinutes: treatment.durationMinutes,
     customerName: input.customerName,
     customerPhone: input.customerPhone,
+    customerPhoneDigits: normalizePhoneDigits(input.customerPhone.trim()),
     whatsappOptIn: input.whatsappOptIn,
     reservationStatus: "pending_payment" as ReservationStatus,
     paymentStatus: "pending" as const,
@@ -205,6 +214,7 @@ export async function insertPublicConfirmedReservationWithoutPayment(
     durationMinutes: treatment.durationMinutes,
     customerName: input.customerName.trim(),
     customerPhone: input.customerPhone.trim(),
+    customerPhoneDigits: normalizePhoneDigits(input.customerPhone.trim()),
     whatsappOptIn: input.whatsappOptIn === true,
     reservationStatus: "confirmed" as const,
     paymentStatus: "not_required" as const,
@@ -327,6 +337,7 @@ export async function insertPanelReservation(
     durationMinutes: treatment.durationMinutes,
     customerName: input.customerName.trim(),
     customerPhone: input.customerPhone.trim(),
+    customerPhoneDigits: normalizePhoneDigits(input.customerPhone.trim()),
     whatsappOptIn: input.whatsappOptIn === true,
     reservationStatus: "confirmed" as const,
     paymentStatus: "not_required" as const,
