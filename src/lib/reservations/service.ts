@@ -85,7 +85,7 @@ async function validatePublicTurnosReservation(
   if (isPublicLeadTimeViolated(input.dateKey, startsAt, now)) {
     return {
       ok: false,
-      error: "Para hoy, los turnos deben reservarse con al menos 1 hora de anticipación.",
+      error: "Los turnos web se pueden reservar con al menos 2 días de anticipación.",
       code: "LEAD_TIME",
     };
   }

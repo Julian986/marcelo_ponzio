@@ -288,8 +288,28 @@ export function BookingPicker({
                 );
               })
             ) : (
-              <div className="col-span-2 rounded-2xl border border-white/8 bg-[#171717] px-4 py-5 text-center text-[13px] text-[var(--soft-gray)]/68">
-                Elegí un día disponible para ver los horarios.
+              <div
+                className={`col-span-2 rounded-2xl border px-4 py-5 text-center ${
+                  selectedDate
+                    ? "border-amber-500/35 bg-amber-950/20"
+                    : "border-[var(--premium-gold)]/35 bg-[rgba(206,120,50,0.14)]"
+                }`}
+              >
+                {selectedDate ? (
+                  <>
+                    <p className="text-[13px] font-medium text-amber-100/95">No hay horarios disponibles para este dia.</p>
+                    <p className="mt-1 text-[12px] text-amber-100/75">
+                      Proba con otra fecha para ver turnos disponibles.
+                    </p>
+                  </>
+                ) : (
+                  <>
+                    <p className="text-[13px] font-medium text-[var(--premium-gold)]">Los turnos web se reservan con 2 dias de anticipacion.</p>
+                    <p className="mt-1 text-[12px] text-[var(--soft-gray)]/88">
+                      Elegi una fecha desde pasado manana para ver horarios.
+                    </p>
+                  </>
+                )}
               </div>
             )}
           </div>
