@@ -38,7 +38,6 @@ export default function TurnosClient({ initialTreatment = "" }: TurnosClientProp
   const [whatsappOptIn, setWhatsappOptIn] = useState(true);
   const [checkoutLoading, setCheckoutLoading] = useState(false);
   const [confirmError, setConfirmError] = useState<string | null>(null);
-  const [freeBookingSuccess, setFreeBookingSuccess] = useState(false);
   /** Horarios con solapes resueltos en servidor; `undefined` = no aplica, `null` = cargando. */
   const [remoteSlots, setRemoteSlots] = useState<string[] | null | undefined>(undefined);
   const bookingFocusRef = useRef<HTMLDivElement | null>(null);
@@ -86,10 +85,6 @@ export default function TurnosClient({ initialTreatment = "" }: TurnosClientProp
 
   useEffect(() => {
     prevDatosCompleteRef.current = false;
-  }, [selectedTreatmentId, selectedDate, selectedTime]);
-
-  useEffect(() => {
-    setFreeBookingSuccess(false);
   }, [selectedTreatmentId, selectedDate, selectedTime]);
 
   useEffect(() => {
@@ -165,7 +160,6 @@ export default function TurnosClient({ initialTreatment = "" }: TurnosClientProp
       return;
     }
     setConfirmError(null);
-    setFreeBookingSuccess(false);
     setCheckoutLoading(true);
     try {
       const pendingBody = {
@@ -207,7 +201,16 @@ export default function TurnosClient({ initialTreatment = "" }: TurnosClientProp
           date_key: selectedDate,
           time_local: selectedTime,
         });
-        setFreeBookingSuccess(true);
+        const qs = new URLSearchParams({
+          treatment: selectedTreatment.name,
+          subtitle: selectedTreatment.subtitle,
+          date: formatSalonDisplayDate(selectedDate),
+          time: selectedTime,
+          name: customerName.trim(),
+          phone: customerPhone.trim(),
+          id: dataPending.id,
+        });
+        window.location.href = `/turnos/confirmado?${qs.toString()}`;
         return;
       }
 
@@ -389,7 +392,7 @@ export default function TurnosClient({ initialTreatment = "" }: TurnosClientProp
                   ? "Reservá el horario abonando la seña. Monto y política la define la clínica."
                   : "Este servicio se reserva sin seña. Te enviamos recordatorio por WhatsApp antes del turno."}
               </p>
-              {activeStep === 5 && datosComplete && requiresDeposit && !freeBookingSuccess && (
+              {activeStep === 5 && datosComplete && requiresDeposit && (
                 <div className="mt-2 flex items-center gap-2 text-[11px] text-[var(--premium-gold)]/92">
                   <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-[var(--premium-gold)]" />
                   <span>Pagá la seña: te llevamos a Mercado Pago</span>
@@ -408,10 +411,10 @@ export default function TurnosClient({ initialTreatment = "" }: TurnosClientProp
               <div className="mt-4">
                 <button
                   type="button"
-                  disabled={!datosComplete || checkoutLoading || freeBookingSuccess}
+                  disabled={!datosComplete || checkoutLoading}
                   onClick={() => void handleMercadoPagoCheckout()}
                   className={`flex h-[52px] w-full items-center justify-center gap-2.5 rounded-xl text-[16px] font-semibold transition-all ${
-                    datosComplete && !checkoutLoading && !freeBookingSuccess
+                    datosComplete && !checkoutLoading
                       ? requiresDeposit
                         ? "bg-[#009EE3] text-white shadow-[0_8px_24px_rgba(0,158,227,0.35)]"
                         : "bg-[var(--premium-gold)] text-black shadow-[0_8px_24px_rgba(206,120,50,0.28)]"
@@ -423,7 +426,7 @@ export default function TurnosClient({ initialTreatment = "" }: TurnosClientProp
                       src="/Mercado_Pago_idp_LvMgpe_1.svg"
                       alt=""
                       className={`h-8 w-auto shrink-0 object-contain sm:h-9 ${
-                        datosComplete && !checkoutLoading && !freeBookingSuccess ? "opacity-100" : "opacity-45"
+                        datosComplete && !checkoutLoading ? "opacity-100" : "opacity-45"
                       }`}
                       width={39}
                       height={28}
@@ -431,26 +434,16 @@ export default function TurnosClient({ initialTreatment = "" }: TurnosClientProp
                     />
                   ) : null}
                   <span className="text-[13px] font-medium opacity-95">
-                    {freeBookingSuccess
-                      ? "Turno confirmado"
-                      : checkoutLoading
-                        ? requiresDeposit
-                          ? "Preparando pago…"
-                          : "Confirmando…"
-                        : requiresDeposit
-                          ? "Pagar seña con Mercado Pago"
-                          : "Confirmar reserva"}
+                    {checkoutLoading
+                      ? requiresDeposit
+                        ? "Preparando pago…"
+                        : "Confirmando…"
+                      : requiresDeposit
+                        ? "Pagar seña con Mercado Pago"
+                        : "Confirmar reserva"}
                   </span>
                 </button>
               </div>
-              {freeBookingSuccess ? (
-                <p
-                  role="status"
-                  className="mt-3 rounded-xl border border-emerald-500/35 bg-emerald-950/30 px-3 py-2.5 text-center text-[12px] leading-snug text-emerald-100/95"
-                >
-                  Listo: tu turno quedó reservado. Te vamos a escribir por WhatsApp con el recordatorio.
-                </p>
-              ) : null}
               {confirmError ? (
                 <p
                   role="alert"
