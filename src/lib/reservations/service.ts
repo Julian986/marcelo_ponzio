@@ -2,6 +2,7 @@ import { randomBytes } from "crypto";
 import type { Db, ObjectId } from "mongodb";
 import { MongoServerError, ObjectId as ObjectIdCtor } from "mongodb";
 
+import { buildCapGetterForDate } from "@/lib/booking/agenda-blocks";
 import { computeBookableSlots } from "@/lib/booking/compute-bookable-slots";
 import { formatSalonDisplayDate } from "@/lib/booking/salon-availability";
 import { isPublicLeadTimeViolated } from "@/lib/booking/public-slot-lead";
@@ -110,7 +111,8 @@ async function validatePublicTurnosReservation(
   if (!interval) {
     return { ok: false, error: "Fecha u horario inválidos.", code: "INVALID_SLOT" };
   }
-  if (await reservationWouldExceedSalonCapacity(db, input.dateKey, interval)) {
+  const capGetter = await buildCapGetterForDate(db, input.dateKey);
+  if (await reservationWouldExceedSalonCapacity(db, input.dateKey, interval, capGetter)) {
     return {
       ok: false,
       error: "Ese horario ya no está disponible (cupos llenos en esa franja).",
@@ -293,7 +295,8 @@ export async function insertPanelReservation(
   if (!interval) {
     return { error: "Fecha u horario inválidos.", code: "INVALID_SLOT" };
   }
-  if (await reservationWouldExceedSalonCapacity(db, dateKey, interval)) {
+  const capGetterPanel = await buildCapGetterForDate(db, dateKey);
+  if (await reservationWouldExceedSalonCapacity(db, dateKey, interval, capGetterPanel)) {
     return {
       error: "Ese horario ya no tiene cupo en esa franja. Elegí otro.",
       code: "SLOT_OVERLAP",

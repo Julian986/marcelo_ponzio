@@ -265,7 +265,7 @@ export default function TurnosClient({ initialTreatment = "" }: TurnosClientProp
     <div className="min-h-screen bg-[#111111] text-white">
       <main className="mx-auto w-full max-w-md px-4 pt-6 pb-24">
         <header className="mb-5 flex items-center justify-between">
-          <Link href="/" aria-label="Volver a inicio" className="text-[var(--soft-gray)]/88">
+          <Link href="/" aria-label="Volver a inicio" className="cursor-pointer text-[var(--soft-gray)]/88">
             <ChevronLeft className="h-5 w-5" strokeWidth={1.8} />
           </Link>
           <h1 className="text-[30px] leading-none font-heading">Reservar turno</h1>
@@ -416,8 +416,8 @@ export default function TurnosClient({ initialTreatment = "" }: TurnosClientProp
                   className={`flex h-[52px] w-full items-center justify-center gap-2.5 rounded-xl text-[16px] font-semibold transition-all ${
                     datosComplete && !checkoutLoading
                       ? requiresDeposit
-                        ? "bg-[#009EE3] text-white shadow-[0_8px_24px_rgba(0,158,227,0.35)]"
-                        : "bg-[var(--premium-gold)] text-black shadow-[0_8px_24px_rgba(206,120,50,0.28)]"
+                        ? "cursor-pointer bg-[#009EE3] text-white shadow-[0_8px_24px_rgba(0,158,227,0.35)]"
+                        : "cursor-pointer bg-[var(--premium-gold)] text-black shadow-[0_8px_24px_rgba(206,120,50,0.28)]"
                       : "cursor-not-allowed bg-[#2a2a2a] text-white/40"
                   } ${checkoutLoading ? "cursor-wait" : ""}`}
                 >
@@ -459,23 +459,23 @@ export default function TurnosClient({ initialTreatment = "" }: TurnosClientProp
 
       <nav className="fixed right-0 bottom-0 left-0 z-30">
         <div className="flex w-full items-center justify-between border-t border-white/8 bg-black/60 px-4 py-2.5 backdrop-blur-[16px]">
-          <Link href="/" className="flex min-w-0 flex-1 flex-col items-center gap-1">
+          <Link href="/" className="flex min-w-0 flex-1 cursor-pointer flex-col items-center gap-1">
             <HomeIcon className="h-5 w-5 text-[var(--soft-gray)]/90" strokeWidth={1.9} />
             <span className="text-[9px] tracking-[0.12em] text-[var(--soft-gray)]/80">Inicio</span>
           </Link>
-          <Link href="/tratamientos" className="flex min-w-0 flex-1 flex-col items-center gap-1">
+          <Link href="/tratamientos" className="flex min-w-0 flex-1 cursor-pointer flex-col items-center gap-1">
             <Sparkles className="h-5 w-5 text-[var(--soft-gray)]/90" strokeWidth={1.8} />
             <span className="text-[9px] tracking-[0.12em] text-[var(--soft-gray)]/80">Tratamientos</span>
           </Link>
-          <Link href="/turnos" className="flex min-w-0 flex-1 flex-col items-center gap-1">
+          <Link href="/turnos" className="flex min-w-0 flex-1 cursor-pointer flex-col items-center gap-1">
             <CalendarDays className="h-5 w-5 text-[var(--premium-gold)]" strokeWidth={1.8} />
             <span className="text-[9px] tracking-[0.12em] text-[var(--premium-gold)]">Turnos</span>
           </Link>
-          <Link href="/promociones" className="flex min-w-0 flex-1 flex-col items-center gap-1">
+          <Link href="/promociones" className="flex min-w-0 flex-1 cursor-pointer flex-col items-center gap-1">
             <Percent className="h-5 w-5 text-[var(--soft-gray)]/90" strokeWidth={1.8} />
             <span className="text-[9px] tracking-[0.12em] text-[var(--soft-gray)]/80">Promos</span>
           </Link>
-          <Link href="/perfil" className="flex min-w-0 flex-1 flex-col items-center gap-1">
+          <Link href="/perfil" className="flex min-w-0 flex-1 cursor-pointer flex-col items-center gap-1">
             <User className="h-5 w-5 text-[var(--soft-gray)]/90" strokeWidth={1.8} />
             <span className="text-[9px] tracking-[0.12em] text-[var(--soft-gray)]/80">Perfil</span>
           </Link>

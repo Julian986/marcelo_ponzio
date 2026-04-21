@@ -83,8 +83,14 @@ function capacityBoundaryInstantsMs(dateKey: string): number[] {
 /**
  * ¿Se puede agregar este intervalo sin superar la capacidad por franja?
  * Entre 9:00 y 11:30 ART pueden convivir hasta 2 turnos que se solapen; fuera, 1.
+ * `getEffectiveCap` permite reducir cupos por bloqueos de agenda (silla / salón).
  */
-export function canPlaceReservationSlot(dateKey: string, candidate: IntervalMs, busy: IntervalMs[]): boolean {
+export function canPlaceReservationSlot(
+  dateKey: string,
+  candidate: IntervalMs,
+  busy: IntervalMs[],
+  getEffectiveCap?: (instantMs: number) => number,
+): boolean {
   const relevant = busy.filter((b) => intervalsOverlap(b, candidate));
   const points = new Set<number>([candidate.startMs, candidate.endMs]);
   for (const b of relevant) {
@@ -110,7 +116,7 @@ export function canPlaceReservationSlot(dateKey: string, candidate: IntervalMs, 
     const hi = Math.min(t1, candidate.endMs);
     if (hi <= lo) continue;
     const mid = (lo + hi) / 2;
-    const cap = salonConcurrentCapAtInstant(dateKey, mid);
+    const cap = getEffectiveCap ? getEffectiveCap(mid) : salonConcurrentCapAtInstant(dateKey, mid);
     let depth = 0;
     for (const b of relevant) {
       if (b.startMs < hi && b.endMs > lo) depth++;
@@ -125,11 +131,12 @@ export function filterSlotsBySalonCapacity(
   dateKey: string,
   durationMinutes: number,
   busy: IntervalMs[],
+  getEffectiveCap?: (instantMs: number) => number,
 ): string[] {
   return slots.filter((timeLocal) => {
     const slot = slotIntervalMs(dateKey, timeLocal, durationMinutes);
     if (!slot) return false;
-    return canPlaceReservationSlot(dateKey, slot, busy);
+    return canPlaceReservationSlot(dateKey, slot, busy, getEffectiveCap);
   });
 }
 
@@ -137,7 +144,8 @@ export async function reservationWouldExceedSalonCapacity(
   db: Db,
   dateKey: string,
   candidate: IntervalMs,
+  getEffectiveCap?: (instantMs: number) => number,
 ): Promise<boolean> {
   const busy = await loadBusyIntervalsMs(db, dateKey);
-  return !canPlaceReservationSlot(dateKey, candidate, busy);
+  return !canPlaceReservationSlot(dateKey, candidate, busy, getEffectiveCap);
 }

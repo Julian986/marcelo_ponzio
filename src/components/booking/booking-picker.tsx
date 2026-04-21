@@ -1,7 +1,7 @@
 "use client";
 
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 import type { TreatmentCategory } from "@/lib/treatments/catalog";
 import {
@@ -29,6 +29,8 @@ export type BookingPickerProps = {
    * `undefined`: usar `resolveTimeSlots` / plantilla. `null`: cargando.
    */
   remoteTimeSlots?: string[] | null;
+  /** `public`: reglas y textos de reserva web. `panel`: alta manual sin mensaje de anticipación de 2 días. */
+  bookingContext?: "public" | "panel";
   bookingFocusRef?: React.RefObject<HTMLDivElement | null>;
   treatmentFirstHintVisible: boolean;
   onTreatmentFirstHintVisible: (visible: boolean) => void;
@@ -43,6 +45,7 @@ export function BookingPicker({
   onTimeChange,
   resolveTimeSlots,
   remoteTimeSlots,
+  bookingContext = "public",
   bookingFocusRef,
   treatmentFirstHintVisible,
   onTreatmentFirstHintVisible,
@@ -51,6 +54,8 @@ export function BookingPicker({
     const today = new Date();
     return new Date(today.getFullYear(), today.getMonth(), 1);
   });
+  /** `undefined`: sin servicio o sin datos; `null`: cargando; objeto: hay al menos un hueco ese día para el servicio. */
+  const [monthAvailability, setMonthAvailability] = useState<Record<string, boolean> | null | undefined>(undefined);
   const [isTreatmentModalOpen, setIsTreatmentModalOpen] = useState(false);
   const [activeTreatmentCategory, setActiveTreatmentCategory] = useState<TreatmentCategory | null>(null);
 
@@ -70,6 +75,53 @@ export function BookingPicker({
     [visibleMonthDate],
   );
   const visibleMonthLabel = `${salonMonthNames[visibleMonthDate.getMonth()]} ${visibleMonthDate.getFullYear()}`;
+
+  useEffect(() => {
+    if (!selectedTreatmentId.trim()) {
+      setMonthAvailability(undefined);
+      return;
+    }
+    let cancelled = false;
+    const ac = new AbortController();
+    setMonthAvailability(null);
+    const y = visibleMonthDate.getFullYear();
+    const m = visibleMonthDate.getMonth();
+    const q = new URLSearchParams({
+      year: String(y),
+      monthIndex: String(m),
+      treatmentId: selectedTreatmentId,
+      scope: bookingContext === "panel" ? "panel" : "public",
+    });
+    fetch(`/api/booking/month-availability?${q.toString()}`, {
+      credentials: "same-origin",
+      signal: ac.signal,
+    })
+      .then(async (res) => {
+        if (!res.ok) throw new Error(String(res.status));
+        return res.json() as Promise<{ availability?: Record<string, boolean> }>;
+      })
+      .then((data) => {
+        if (cancelled) return;
+        const raw = data.availability;
+        setMonthAvailability(typeof raw === "object" && raw !== null ? raw : undefined);
+      })
+      .catch(() => {
+        if (!cancelled) setMonthAvailability(undefined);
+      });
+    return () => {
+      cancelled = true;
+      ac.abort();
+    };
+  }, [selectedTreatmentId, visibleMonthDate, bookingContext]);
+
+  useEffect(() => {
+    if (!selectedDate || !selectedTreatmentId.trim()) return;
+    if (monthAvailability === undefined || monthAvailability === null) return;
+    if (monthAvailability[selectedDate] === false) {
+      onDateChange("");
+      onTimeChange("");
+    }
+  }, [monthAvailability, onDateChange, onTimeChange, selectedDate, selectedTreatmentId]);
 
   const useRemoteSlots = remoteTimeSlots !== undefined;
   const slotsLoading = useRemoteSlots && selectedDate && remoteTimeSlots === null;
@@ -113,7 +165,7 @@ export function BookingPicker({
         <button
           type="button"
           onClick={openTreatmentModal}
-          className={`flex w-full items-center justify-between rounded-2xl border bg-[#171717] px-4 py-3 text-left transition-all ${
+          className={`flex w-full cursor-pointer items-center justify-between rounded-2xl border bg-[#171717] px-4 py-3 text-left transition-all ${
             activeStep === 1
               ? "border-[var(--premium-gold)] shadow-[0_0_0_1px_rgba(228,202,105,0.22),0_0_22px_rgba(206,120,50,0.18)]"
               : "border-white/8"
@@ -169,17 +221,25 @@ export function BookingPicker({
             onClick={() =>
               setVisibleMonthDate((current) => new Date(current.getFullYear(), current.getMonth() - 1, 1))
             }
-            className="text-[#7f6a45]"
+            className="cursor-pointer rounded-lg p-1 text-[#7f6a45] hover:bg-black/10"
           >
             <ChevronLeft className="h-4 w-4" strokeWidth={1.8} />
           </button>
-          <h2 className="text-[18px] leading-none font-heading">{visibleMonthLabel}</h2>
+          <h2 className="flex items-center gap-2 text-[18px] leading-none font-heading">
+            {visibleMonthLabel}
+            {selectedTreatmentId && monthAvailability === null ? (
+              <span
+                className="inline-block h-2.5 w-2.5 animate-pulse rounded-full bg-[#7f6a45]/90"
+                aria-hidden
+              />
+            ) : null}
+          </h2>
           <button
             type="button"
             onClick={() =>
               setVisibleMonthDate((current) => new Date(current.getFullYear(), current.getMonth() + 1, 1))
             }
-            className="text-[#7f6a45]"
+            className="cursor-pointer rounded-lg p-1 text-[#7f6a45] hover:bg-black/10"
           >
             <ChevronRight className="h-4 w-4" strokeWidth={1.8} />
           </button>
@@ -196,7 +256,10 @@ export function BookingPicker({
           </p>
         ) : null}
 
-        <div className="grid grid-cols-7 gap-y-2 text-center">
+        <div
+          className="grid grid-cols-7 gap-y-2 text-center"
+          aria-busy={Boolean(selectedTreatmentId && monthAvailability === null)}
+        >
           {salonWeekdayLabels.map((label) => (
             <div key={label} className="text-[10px] tracking-[0.08em] text-[#7f7364]">
               {label}
@@ -204,13 +267,34 @@ export function BookingPicker({
           ))}
           {calendarItems.map((day) => {
             const isSelected = day.value === selectedDate;
-            const isDisabled = !day.isCurrentMonth || !day.isAvailable;
+            const monthAvailReady = monthAvailability !== undefined && monthAvailability !== null;
+            const fullyBooked =
+              Boolean(selectedTreatmentId) &&
+              monthAvailReady &&
+              day.isCurrentMonth &&
+              day.isAvailable &&
+              monthAvailability[day.value] === false;
+            const isDisabled = !day.isCurrentMonth || !day.isAvailable || fullyBooked;
 
             return (
               <button
                 key={day.value}
                 type="button"
                 disabled={isDisabled}
+                title={
+                  fullyBooked
+                    ? "Sin cupos para este servicio (ocupado o bloqueado)."
+                    : !day.isAvailable && day.isCurrentMonth
+                      ? "Día no disponible (cerrado o feriado)."
+                      : undefined
+                }
+                aria-label={
+                  fullyBooked
+                    ? `${day.dayNumber}, sin cupos`
+                    : !day.isAvailable && day.isCurrentMonth
+                      ? `${day.dayNumber}, no disponible`
+                      : undefined
+                }
                 onClick={() => {
                   if (!selectedTreatment) {
                     onTreatmentFirstHintVisible(true);
@@ -225,14 +309,16 @@ export function BookingPicker({
                     });
                   });
                 }}
-                className={`mx-auto flex h-8 w-8 items-center justify-center rounded-lg text-[12px] transition-colors ${
+                className={`mx-auto flex h-8 w-8 cursor-pointer items-center justify-center rounded-lg text-[12px] transition-colors disabled:cursor-not-allowed ${
                   isSelected
                     ? "bg-[#1a1a1a] text-[#c89b56] shadow-[0_6px_14px_rgba(0,0,0,0.25)]"
-                    : !day.isCurrentMonth
-                      ? "text-[#cfbea8]/45"
-                      : day.isAvailable
-                        ? "bg-[#eed7ae] text-[#3b2f22]"
-                        : "text-[#897a67]"
+                    : fullyBooked
+                      ? "bg-[#c9b89a]/55 text-[#5c4f3d] line-through decoration-[#6b5a45]"
+                      : !day.isCurrentMonth
+                        ? "text-[#cfbea8]/45"
+                        : day.isAvailable
+                          ? "bg-[#eed7ae] text-[#3b2f22]"
+                          : "text-[#897a67]"
                 }`}
               >
                 {day.dayNumber}
@@ -279,7 +365,7 @@ export function BookingPicker({
                     key={time}
                     type="button"
                     onClick={() => onTimeChange(time)}
-                    className={`h-11 rounded-xl border text-[16px] transition-colors ${
+                    className={`h-11 cursor-pointer rounded-xl border text-[16px] transition-colors ${
                       isActive
                         ? "border-[var(--premium-gold)] bg-[rgba(206,120,50,0.14)] text-[var(--premium-gold)]"
                         : "border-white/8 bg-[#151515] text-[var(--soft-gray)]"
@@ -294,7 +380,9 @@ export function BookingPicker({
                 className={`col-span-2 rounded-2xl border px-4 py-5 text-center ${
                   selectedDate
                     ? "border-amber-500/35 bg-amber-950/20"
-                    : "border-[var(--premium-gold)]/35 bg-[rgba(206,120,50,0.14)]"
+                    : bookingContext === "panel"
+                      ? "border-white/8 bg-[#171717]"
+                      : "border-[var(--premium-gold)]/35 bg-[rgba(206,120,50,0.14)]"
                 }`}
               >
                 {selectedDate ? (
@@ -310,9 +398,15 @@ export function BookingPicker({
                         : "Proba con otra fecha para ver turnos disponibles."}
                     </p>
                   </>
+                ) : bookingContext === "panel" ? (
+                  <p className="text-[13px] text-[var(--soft-gray)]/72">
+                    Elegí una fecha para ver los horarios disponibles.
+                  </p>
                 ) : (
                   <>
-                    <p className="text-[13px] font-medium text-[var(--premium-gold)]">Los turnos web se reservan con 2 dias de anticipacion.</p>
+                    <p className="text-[13px] font-medium text-[var(--premium-gold)]">
+                      Los turnos web se reservan con 2 dias de anticipacion.
+                    </p>
                     <p className="mt-1 text-[12px] text-[var(--soft-gray)]/88">
                       Elegi una fecha desde pasado manana para ver horarios.
                     </p>
@@ -330,7 +424,7 @@ export function BookingPicker({
             type="button"
             aria-label="Cerrar selector de servicio"
             onClick={closeTreatmentModal}
-            className="absolute inset-0"
+            className="absolute inset-0 cursor-pointer bg-transparent"
           />
 
           <div className="relative w-full rounded-t-[32px] border-t border-white/8 bg-[#161616] px-4 pt-3 pb-6 shadow-[0_-18px_40px_rgba(0,0,0,0.45)]">
@@ -341,7 +435,7 @@ export function BookingPicker({
                 <button
                   type="button"
                   onClick={() => setActiveTreatmentCategory(null)}
-                  className="text-[var(--soft-gray)]/75"
+                  className="cursor-pointer rounded-lg p-1 text-[var(--soft-gray)]/75 hover:bg-white/5"
                   aria-label="Volver a categorías"
                 >
                   <ChevronLeft className="h-5 w-5" strokeWidth={1.8} />
@@ -357,7 +451,7 @@ export function BookingPicker({
               <button
                 type="button"
                 onClick={closeTreatmentModal}
-                className="text-[13px] text-[var(--soft-gray)]/75"
+                className="cursor-pointer rounded-lg px-2 py-1 text-[13px] text-[var(--soft-gray)]/75 hover:bg-white/5"
               >
                 Cerrar
               </button>
@@ -373,7 +467,7 @@ export function BookingPicker({
                       key={treatment.id}
                       type="button"
                       onClick={() => selectTreatment(treatment.id)}
-                      className={`w-full rounded-2xl border px-4 py-3 text-left transition-colors ${
+                      className={`w-full cursor-pointer rounded-2xl border px-4 py-3 text-left transition-colors ${
                         isSelected
                           ? "border-[var(--premium-gold)] bg-[rgba(228,202,105,0.1)]"
                           : "border-white/8 bg-[#1c1c1c]"
@@ -394,7 +488,7 @@ export function BookingPicker({
                     key={category}
                     type="button"
                     onClick={() => setActiveTreatmentCategory(category)}
-                    className="flex w-full items-center justify-between rounded-2xl border border-white/8 bg-[#1c1c1c] px-4 py-4 text-left"
+                    className="flex w-full cursor-pointer items-center justify-between rounded-2xl border border-white/8 bg-[#1c1c1c] px-4 py-4 text-left hover:bg-[#222]"
                   >
                     <div>
                       <p className="text-[20px] leading-none font-heading text-[var(--soft-gray)]">{category}</p>

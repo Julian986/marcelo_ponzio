@@ -116,7 +116,7 @@ export function PanelNuevoTurnoClient() {
         <header className="mb-5 flex items-center gap-3">
           <Link
             href="/panel-turnos"
-            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-white/10 bg-[#171717] text-[var(--soft-gray)]/88 hover:bg-[#1d1d1d]"
+            className="flex h-10 w-10 shrink-0 cursor-pointer items-center justify-center rounded-2xl border border-white/10 bg-[#171717] text-[var(--soft-gray)]/88 hover:bg-[#1d1d1d]"
             aria-label="Volver al panel"
           >
             <ChevronLeft className="h-5 w-5" strokeWidth={1.85} />
@@ -128,6 +128,7 @@ export function PanelNuevoTurnoClient() {
         </header>
 
         <BookingPicker
+          bookingContext="panel"
           selectedTreatmentId={selectedTreatmentId}
           onTreatmentIdChange={setSelectedTreatmentId}
           selectedDate={selectedDate}
@@ -228,7 +229,7 @@ export function PanelNuevoTurnoClient() {
               onClick={() => void handleSubmit()}
               className={`flex h-[50px] w-full items-center justify-center rounded-xl text-[15px] font-semibold transition-all ${
                 datosComplete && !submitting
-                  ? "bg-gradient-to-br from-[var(--accent-coral)] to-[var(--accent-orange)] text-white shadow-[0_8px_24px_rgba(182,75,84,0.35)]"
+                  ? "cursor-pointer bg-gradient-to-br from-[var(--accent-coral)] to-[var(--accent-orange)] text-white shadow-[0_8px_24px_rgba(182,75,84,0.35)]"
                   : "cursor-not-allowed bg-[#2a2a2a] text-white/40"
               }`}
             >

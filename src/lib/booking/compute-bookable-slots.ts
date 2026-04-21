@@ -1,5 +1,6 @@
 import type { Db } from "mongodb";
 
+import { buildCapGetterForDate } from "@/lib/booking/agenda-blocks";
 import { getAvailableTimesForDate, filterSlotsServiceEndsOnOrBeforeClose } from "@/lib/booking/salon-availability";
 import { getPublicBookableTimeSlots } from "@/lib/booking/public-slot-lead";
 import { filterPublicSlotsByTreatmentRules } from "@/lib/booking/treatment-slot-rules";
@@ -26,5 +27,6 @@ export async function computeBookableSlots(
   slots = filterSlotsServiceEndsOnOrBeforeClose(slots, treatment.durationMinutes);
   slots = filterPublicSlotsByTreatmentRules(treatment.id, slots);
   const busy = await loadBusyIntervalsMs(db, params.dateKey);
-  return filterSlotsBySalonCapacity(slots, params.dateKey, treatment.durationMinutes, busy);
+  const capGetter = await buildCapGetterForDate(db, params.dateKey);
+  return filterSlotsBySalonCapacity(slots, params.dateKey, treatment.durationMinutes, busy, capGetter);
 }

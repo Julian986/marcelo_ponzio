@@ -69,7 +69,7 @@ export function PanelLogin() {
         <button
           type="submit"
           disabled={loading || !password}
-          className="mt-5 h-[52px] w-full rounded-full bg-gradient-to-r from-[var(--accent-orange)] to-[var(--premium-gold)] text-[16px] font-heading text-white shadow-[0_0_24px_rgba(228,202,105,0.28)] disabled:opacity-45"
+          className="mt-5 h-[52px] w-full cursor-pointer rounded-full bg-gradient-to-r from-[var(--accent-orange)] to-[var(--premium-gold)] text-[16px] font-heading text-white shadow-[0_0_24px_rgba(228,202,105,0.28)] disabled:cursor-not-allowed disabled:opacity-45"
         >
           {loading ? "Ingresando…" : "Entrar"}
         </button>
