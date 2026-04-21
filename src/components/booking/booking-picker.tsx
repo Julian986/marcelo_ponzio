@@ -13,6 +13,7 @@ import {
   salonMonthNames,
   salonWeekdayLabels,
 } from "@/lib/booking/salon-availability";
+import { isArgentinaPublicHoliday } from "@/lib/booking/argentina-holidays";
 
 export type BookingPickerProps = {
   selectedTreatmentId: string;
@@ -81,6 +82,7 @@ export function BookingPicker({
         ? resolveTimeSlots(selectedDate)
         : getAvailableTimesForDate(selectedDate)
     : [];
+  const isSelectedDateHoliday = Boolean(selectedDate && isArgentinaPublicHoliday(selectedDate));
 
   const activeStep = !selectedTreatment
     ? 1
@@ -297,9 +299,15 @@ export function BookingPicker({
               >
                 {selectedDate ? (
                   <>
-                    <p className="text-[13px] font-medium text-amber-100/95">No hay horarios disponibles para este dia.</p>
+                    <p className="text-[13px] font-medium text-amber-100/95">
+                      {isSelectedDateHoliday
+                        ? "Feriado (cerrado): no hay horarios disponibles para este dia."
+                        : "No hay horarios disponibles para este dia."}
+                    </p>
                     <p className="mt-1 text-[12px] text-amber-100/75">
-                      Proba con otra fecha para ver turnos disponibles.
+                      {isSelectedDateHoliday
+                        ? "Elegi otra fecha habilitada para ver turnos disponibles."
+                        : "Proba con otra fecha para ver turnos disponibles."}
                     </p>
                   </>
                 ) : (

@@ -3,6 +3,7 @@ import {
   TREATMENT_CATEGORIES,
   type TreatmentCategory,
 } from "@/lib/treatments/catalog";
+import { isArgentinaPublicHoliday } from "@/lib/booking/argentina-holidays";
 
 export type SalonTreatmentOption = {
   id: string;
@@ -130,6 +131,9 @@ export function getAvailableTimesForDate(value: string) {
   const today = startOfDay(new Date());
 
   if (startOfDay(date) < today) {
+    return [];
+  }
+  if (isArgentinaPublicHoliday(value)) {
     return [];
   }
 
