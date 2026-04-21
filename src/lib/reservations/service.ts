@@ -4,7 +4,8 @@ import { MongoServerError, ObjectId as ObjectIdCtor } from "mongodb";
 
 import { buildCapGetterForDate } from "@/lib/booking/agenda-blocks";
 import { computeBookableSlots } from "@/lib/booking/compute-bookable-slots";
-import { formatSalonDisplayDate, normalizePhoneDigits } from "@/lib/booking/salon-availability";
+import { formatSalonDisplayDate } from "@/lib/booking/salon-availability";
+import { canonicalPhoneDigitsAR } from "@/lib/customer/phone-canonical-ar";
 import { isPublicLeadTimeViolated } from "@/lib/booking/public-slot-lead";
 import { reservationWouldExceedSalonCapacity, slotIntervalMs } from "@/lib/booking/slot-overlap";
 import { SALON_TREATMENTS, findSalonTreatmentById, type SalonTreatment } from "@/lib/treatments/catalog";
@@ -157,7 +158,7 @@ export async function insertPendingReservation(
     durationMinutes: treatment.durationMinutes,
     customerName: input.customerName,
     customerPhone: input.customerPhone,
-    customerPhoneDigits: normalizePhoneDigits(input.customerPhone.trim()),
+    customerPhoneDigits: canonicalPhoneDigitsAR(input.customerPhone.trim()),
     whatsappOptIn: input.whatsappOptIn,
     reservationStatus: "pending_payment" as ReservationStatus,
     paymentStatus: "pending" as const,
@@ -214,7 +215,7 @@ export async function insertPublicConfirmedReservationWithoutPayment(
     durationMinutes: treatment.durationMinutes,
     customerName: input.customerName.trim(),
     customerPhone: input.customerPhone.trim(),
-    customerPhoneDigits: normalizePhoneDigits(input.customerPhone.trim()),
+    customerPhoneDigits: canonicalPhoneDigitsAR(input.customerPhone.trim()),
     whatsappOptIn: input.whatsappOptIn === true,
     reservationStatus: "confirmed" as const,
     paymentStatus: "not_required" as const,
@@ -337,7 +338,7 @@ export async function insertPanelReservation(
     durationMinutes: treatment.durationMinutes,
     customerName: input.customerName.trim(),
     customerPhone: input.customerPhone.trim(),
-    customerPhoneDigits: normalizePhoneDigits(input.customerPhone.trim()),
+    customerPhoneDigits: canonicalPhoneDigitsAR(input.customerPhone.trim()),
     whatsappOptIn: input.whatsappOptIn === true,
     reservationStatus: "confirmed" as const,
     paymentStatus: "not_required" as const,

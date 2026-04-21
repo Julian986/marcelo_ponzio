@@ -1,19 +1,20 @@
 import type { Db } from "mongodb";
 
-import { normalizePhoneDigits } from "@/lib/booking/salon-availability";
+import { canonicalPhoneDigitsAR, customerPhoneDigitsQueryValues } from "@/lib/customer/phone-canonical-ar";
 
 import type { ReservationDoc } from "./types";
 
 const COLLECTION = "reservations";
 
-/** Reservas del cliente (mismo WhatsApp normalizado), más recientes primero. */
+/** Reservas del cliente (mismo WhatsApp, formato AR unificado + variantes guardadas). */
 export async function listReservationsByCustomerPhoneDigits(
   db: Db,
-  phoneDigits: string,
+  phoneDigitsCanonical: string,
 ): Promise<ReservationDoc[]> {
+  const keys = customerPhoneDigitsQueryValues(phoneDigitsCanonical);
   return db
     .collection<ReservationDoc>(COLLECTION)
-    .find({ customerPhoneDigits: phoneDigits })
+    .find({ customerPhoneDigits: { $in: keys } })
     .sort({ startsAt: -1 })
     .limit(200)
     .toArray();
@@ -31,7 +32,7 @@ export async function backfillCustomerPhoneDigitsBatch(db: Db, batchSize = 250):
     rows.map((r) =>
       col.updateOne(
         { _id: r._id },
-        { $set: { customerPhoneDigits: normalizePhoneDigits(String(r.customerPhone ?? "")) } },
+        { $set: { customerPhoneDigits: canonicalPhoneDigitsAR(String(r.customerPhone ?? "")) } },
       ),
     ),
   );

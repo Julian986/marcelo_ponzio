@@ -5,11 +5,24 @@ import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 
 import { isLikelyWhatsappNumber } from "@/lib/booking/salon-availability";
+import { canonicalPhoneDigitsAR } from "@/lib/customer/phone-canonical-ar";
+import type { CustomerReservationPublic } from "@/lib/reservations/customer-public-serialize";
 
 type MeState = "unknown" | "guest" | "authed";
 
+function pickWelcomeName(rows: CustomerReservationPublic[]): string | null {
+  const sorted = [...rows].sort((a, b) => b.startsAtIso.localeCompare(a.startsAtIso));
+  for (const r of sorted) {
+    const n = r.customerName?.trim();
+    if (n && n !== "Cliente") return n;
+  }
+  const first = sorted[0]?.customerName?.trim();
+  return first || null;
+}
+
 export function PerfilHomeClient() {
   const [me, setMe] = useState<MeState>("unknown");
+  const [welcomeName, setWelcomeName] = useState<string | null>(null);
   const [phoneHint, setPhoneHint] = useState<string | null>(null);
   const [phoneInput, setPhoneInput] = useState("");
   const [busy, setBusy] = useState(false);
@@ -21,15 +34,20 @@ export function PerfilHomeClient() {
       if (res.status === 401) {
         setMe("guest");
         setPhoneHint(null);
+        setWelcomeName(null);
         return;
       }
       if (!res.ok) {
-        setMe("guest");
+        setMe((prev) => (prev === "authed" ? "authed" : "guest"));
         return;
       }
+      const data = (await res.json()) as { reservations?: CustomerReservationPublic[] };
+      const list = Array.isArray(data.reservations) ? data.reservations : [];
       setMe("authed");
+      setWelcomeName(pickWelcomeName(list));
     } catch {
       setMe("guest");
+      setWelcomeName(null);
     }
   }, []);
 
@@ -57,10 +75,10 @@ export function PerfilHomeClient() {
         setError(data.error ?? "No se pudo iniciar sesión.");
         return;
       }
-      const digits = phoneInput.replace(/\D/g, "");
+      const digits = canonicalPhoneDigitsAR(phoneInput.trim());
       setPhoneHint(`···${digits.slice(-4)}`);
       setPhoneInput("");
-      setMe("authed");
+      await refreshSession();
     } catch {
       setError("Sin conexión. Probá de nuevo.");
     } finally {
@@ -74,6 +92,7 @@ export function PerfilHomeClient() {
       await fetch("/api/me/session", { method: "DELETE", credentials: "same-origin" });
       setMe("guest");
       setPhoneHint(null);
+      setWelcomeName(null);
     } finally {
       setBusy(false);
     }
@@ -84,17 +103,28 @@ export function PerfilHomeClient() {
       <header className="mb-5 text-center">
         <h1 className="font-heading text-[28px] leading-none">Perfil</h1>
         {me === "authed" ? (
-          <p className="mt-2 text-[12px] text-[var(--soft-gray)]/62">
-            Conectado{phoneHint ? ` (${phoneHint})` : ""}
-            <button
-              type="button"
-              disabled={busy}
-              onClick={() => void handleLogout()}
-              className="ml-2 cursor-pointer text-[var(--premium-gold)] underline-offset-2 hover:underline disabled:opacity-50"
-            >
-              Salir
-            </button>
-          </p>
+          <div className="mt-3 space-y-1.5">
+            <p className="text-[17px] font-medium leading-snug text-[var(--soft-gray)]">
+              {welcomeName ? (
+                <>
+                  Bienvenido/a, <span className="text-[var(--premium-gold)]">{welcomeName}</span>
+                </>
+              ) : (
+                <span>Bienvenido/a</span>
+              )}
+            </p>
+            <p className="text-[12px] text-[var(--soft-gray)]/58">
+              Sesión iniciada{phoneHint ? ` ${phoneHint}` : ""}
+              <button
+                type="button"
+                disabled={busy}
+                onClick={() => void handleLogout()}
+                className="ml-2 cursor-pointer font-semibold text-[var(--premium-gold)] underline-offset-2 hover:underline disabled:opacity-50"
+              >
+                Salir
+              </button>
+            </p>
+          </div>
         ) : me === "guest" ? (
           <p className="mt-2 text-[12px] text-[var(--soft-gray)]/62">
             Iniciá sesión con tu WhatsApp para ver tus turnos.
@@ -104,42 +134,44 @@ export function PerfilHomeClient() {
         )}
       </header>
 
-      <section
-        id="acceso"
-        className="mb-4 rounded-2xl border border-white/8 bg-[#181818] px-4 py-4 shadow-[0_14px_30px_rgba(0,0,0,0.65)]"
-      >
-        <p className="text-[11px] tracking-[0.14em] text-[var(--soft-gray)]/55">Acceso</p>
-        <form onSubmit={(e) => void handleLogin(e)} className="mt-3 space-y-3">
-          <div>
-            <label htmlFor="perfil-phone" className="text-[11px] text-[var(--soft-gray)]/55">
-              Mismo WhatsApp que usás al reservar
-            </label>
-            <input
-              id="perfil-phone"
-              name="phone"
-              type="tel"
-              autoComplete="tel"
-              inputMode="tel"
-              value={phoneInput}
-              onChange={(e) => setPhoneInput(e.target.value)}
-              placeholder="+54 9 11 …"
-              className="mt-1.5 w-full rounded-xl border border-white/10 bg-[#141414] px-3 py-3 text-[15px] text-[var(--soft-gray)] outline-none focus:border-[var(--premium-gold)]/55"
-            />
-          </div>
-          {error ? (
-            <p role="alert" className="text-[12px] text-red-300/95">
-              {error}
-            </p>
-          ) : null}
-          <button
-            type="submit"
-            disabled={busy}
-            className="flex h-11 w-full cursor-pointer items-center justify-center rounded-xl bg-[var(--premium-gold)] text-[14px] font-semibold text-black shadow-[0_6px_20px_rgba(206,120,50,0.25)] disabled:cursor-not-allowed disabled:opacity-50"
-          >
-            {busy ? "…" : "Ver mis datos"}
-          </button>
-        </form>
-      </section>
+      {me !== "authed" ? (
+        <section
+          id="acceso"
+          className="mb-4 rounded-2xl border border-white/8 bg-[#181818] px-4 py-4 shadow-[0_14px_30px_rgba(0,0,0,0.65)]"
+        >
+          <p className="text-[11px] tracking-[0.14em] text-[var(--soft-gray)]/55">Acceso</p>
+          <form onSubmit={(e) => void handleLogin(e)} className="mt-3 space-y-3">
+            <div>
+              <label htmlFor="perfil-phone" className="text-[11px] text-[var(--soft-gray)]/55">
+                Mismo WhatsApp que usás al reservar
+              </label>
+              <input
+                id="perfil-phone"
+                name="phone"
+                type="tel"
+                autoComplete="tel"
+                inputMode="tel"
+                value={phoneInput}
+                onChange={(e) => setPhoneInput(e.target.value)}
+                placeholder="+54 9 11 …"
+                className="mt-1.5 w-full rounded-xl border border-white/10 bg-[#141414] px-3 py-3 text-[15px] text-[var(--soft-gray)] outline-none focus:border-[var(--premium-gold)]/55"
+              />
+            </div>
+            {error ? (
+              <p role="alert" className="text-[12px] text-red-300/95">
+                {error}
+              </p>
+            ) : null}
+            <button
+              type="submit"
+              disabled={busy}
+              className="flex h-11 w-full cursor-pointer items-center justify-center rounded-xl bg-[var(--premium-gold)] text-[14px] font-semibold text-black shadow-[0_6px_20px_rgba(206,120,50,0.25)] disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {busy ? "…" : "Ver mis datos"}
+            </button>
+          </form>
+        </section>
+      ) : null}
 
       <section className="rounded-2xl border border-white/8 bg-[#181818] px-3 py-1.5 shadow-[0_14px_30px_rgba(0,0,0,0.65)]">
         <div className="divide-y divide-white/10">
@@ -200,13 +232,15 @@ export function PerfilHomeClient() {
         </div>
       </section>
 
-      <section className="mt-4 rounded-2xl border border-white/6 bg-[#141414] px-4 py-3">
-        <p className="text-[12px] uppercase tracking-[0.18em] text-[var(--soft-gray)]/70">Tip</p>
-        <p className="mt-1.5 text-[13px] text-[var(--soft-gray)]/92">
-          Usá el mismo número de WhatsApp que al reservar en la web o en el salón. Nadie más puede ver tus turnos
-          sin ese número.
-        </p>
-      </section>
+      {me !== "authed" ? (
+        <section className="mt-4 rounded-2xl border border-white/6 bg-[#141414] px-4 py-3">
+          <p className="text-[12px] uppercase tracking-[0.18em] text-[var(--soft-gray)]/70">Tip</p>
+          <p className="mt-1.5 text-[13px] text-[var(--soft-gray)]/92">
+            Usá el mismo número de WhatsApp que al reservar en la web o en el salón. Nadie más puede ver tus turnos
+            sin ese número.
+          </p>
+        </section>
+      ) : null}
     </main>
   );
 }

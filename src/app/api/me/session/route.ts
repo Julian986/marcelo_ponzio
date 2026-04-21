@@ -1,7 +1,8 @@
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 
-import { isLikelyWhatsappNumber, normalizePhoneDigits } from "@/lib/booking/salon-availability";
+import { isLikelyWhatsappNumber } from "@/lib/booking/salon-availability";
+import { canonicalPhoneDigitsAR } from "@/lib/customer/phone-canonical-ar";
 import { CUSTOMER_PROFILE_COOKIE, mintCustomerProfileToken } from "@/lib/customer/customer-session";
 
 export const dynamic = "force-dynamic";
@@ -44,7 +45,10 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Ingresá un número de WhatsApp válido (10 a 15 dígitos)." }, { status: 400 });
   }
 
-  const digits = normalizePhoneDigits(phone);
+  const digits = canonicalPhoneDigitsAR(phone);
+  if (!digits) {
+    return NextResponse.json({ error: "Número inválido." }, { status: 400 });
+  }
   const token = mintCustomerProfileToken(digits);
   const cookieStore = await cookies();
   cookieStore.set(CUSTOMER_PROFILE_COOKIE, token, {

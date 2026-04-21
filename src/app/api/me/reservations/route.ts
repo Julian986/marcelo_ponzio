@@ -1,6 +1,7 @@
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 
+import { canonicalPhoneDigitsAR } from "@/lib/customer/phone-canonical-ar";
 import { CUSTOMER_PROFILE_COOKIE, readCustomerProfilePhoneDigits } from "@/lib/customer/customer-session";
 import { getDb } from "@/lib/mongodb";
 import { listReservationsByCustomerPhoneDigits } from "@/lib/reservations/customer-queries";
@@ -12,7 +13,11 @@ export const dynamic = "force-dynamic";
 export async function GET() {
   const cookieStore = await cookies();
   const raw = cookieStore.get(CUSTOMER_PROFILE_COOKIE)?.value;
-  const digits = readCustomerProfilePhoneDigits(raw);
+  const fromCookie = readCustomerProfilePhoneDigits(raw);
+  if (!fromCookie) {
+    return NextResponse.json({ error: "No iniciaste sesión." }, { status: 401 });
+  }
+  const digits = canonicalPhoneDigitsAR(fromCookie);
   if (!digits) {
     return NextResponse.json({ error: "No iniciaste sesión." }, { status: 401 });
   }

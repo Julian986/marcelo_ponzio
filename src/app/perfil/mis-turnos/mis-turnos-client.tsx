@@ -109,10 +109,12 @@ export function MisTurnosClient() {
               key={r.id}
               className="rounded-2xl border border-white/8 bg-[#171717] px-4 py-4 shadow-[0_10px_28px_rgba(0,0,0,0.35)]"
             >
-              <p className="text-[11px] tracking-[0.12em] text-[var(--soft-gray)]/50">
-                {formatShortDateFromKey(r.dateKey)} · {r.timeLocal}
+              <p className="font-heading text-[22px] leading-none tracking-tight text-[var(--soft-gray)]">
+                <span className="text-[var(--premium-gold)]">{r.timeLocal}</span>
+                <span className="text-[var(--soft-gray)]/90"> · {formatShortDateFromKey(r.dateKey)}</span>
               </p>
-              <p className="mt-1 text-[16px] font-semibold text-[var(--soft-gray)]">{r.treatmentName}</p>
+              <p className="mt-1.5 text-[12px] text-[var(--soft-gray)]/52">{r.displayDate}</p>
+              <p className="mt-2.5 text-[16px] font-semibold text-[var(--soft-gray)]">{r.treatmentName}</p>
               <p className="mt-0.5 text-[12px] text-[var(--soft-gray)]/58">{r.subtitle}</p>
               <div className="mt-2 flex flex-wrap items-center gap-2">
                 <span className="rounded-full bg-white/10 px-2.5 py-1 text-[11px] font-medium text-[var(--soft-gray)]/88">
