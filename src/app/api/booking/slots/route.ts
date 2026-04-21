@@ -13,6 +13,10 @@ export async function GET(request: Request) {
   const treatmentId = url.searchParams.get("treatmentId")?.trim() ?? "";
   const scopeRaw = url.searchParams.get("scope")?.trim().toLowerCase() ?? "public";
   const scope = scopeRaw === "panel" ? "panel" : "public";
+  const excludeReservationHexId =
+    url.searchParams.get("excludeReservationHexId")?.trim() ??
+    url.searchParams.get("excludeReservationId")?.trim() ??
+    "";
 
   if (!/^\d{4}-\d{2}-\d{2}$/.test(dateKey)) {
     return NextResponse.json({ error: "Fecha inválida." }, { status: 400 });
@@ -26,6 +30,8 @@ export async function GET(request: Request) {
     if (!verifyPanelCookie(cookieStore.get("panel_turnos_auth")?.value)) {
       return NextResponse.json({ error: "No autorizado." }, { status: 401 });
     }
+  } else if (excludeReservationHexId) {
+    return NextResponse.json({ error: "Parámetro no permitido." }, { status: 400 });
   }
 
   try {
@@ -35,6 +41,7 @@ export async function GET(request: Request) {
       treatmentId,
       now: new Date(),
       scope,
+      excludeReservationHexId: scope === "panel" ? excludeReservationHexId || undefined : undefined,
     });
     return NextResponse.json({ slots });
   } catch (e) {

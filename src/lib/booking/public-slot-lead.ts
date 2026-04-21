@@ -13,7 +13,7 @@ export function argentinaTodayDateKey(now = new Date()): string {
   return formatInTimeZone(now, RESERVATION_TZ, "yyyy-MM-dd");
 }
 
-function minPublicBookableDateKey(now = new Date()): string {
+export function minPublicBookableDateKey(now = new Date()): string {
   return formatInTimeZone(
     new Date(now.getTime() + PUBLIC_MIN_LEAD_DAYS * 24 * 60 * 60 * 1000),
     RESERVATION_TZ,

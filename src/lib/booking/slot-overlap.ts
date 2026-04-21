@@ -1,4 +1,4 @@
-import type { Db } from "mongodb";
+import type { Db, ObjectId } from "mongodb";
 import { formatInTimeZone } from "date-fns-tz";
 
 import { RESERVATION_TZ } from "@/lib/booking/public-slot-lead";
@@ -44,10 +44,9 @@ export function salonConcurrentCapAtInstant(dateKey: string, instantMs: number):
   return 1;
 }
 
-function durationForReservationRow(r: {
+export function reservationDurationMinutesFromDoc(r: {
   durationMinutes?: unknown;
   treatmentId?: unknown;
-  startsAt?: unknown;
 }): number {
   if (typeof r.durationMinutes === "number" && Number.isFinite(r.durationMinutes) && r.durationMinutes > 0) {
     return r.durationMinutes;
@@ -56,13 +55,29 @@ function durationForReservationRow(r: {
   return findSalonTreatmentById(tid)?.durationMinutes ?? 60;
 }
 
-export async function loadBusyIntervalsMs(db: Db, dateKey: string): Promise<IntervalMs[]> {
+function durationForReservationRow(r: {
+  durationMinutes?: unknown;
+  treatmentId?: unknown;
+  startsAt?: unknown;
+}): number {
+  return reservationDurationMinutesFromDoc(r);
+}
+
+export async function loadBusyIntervalsMs(
+  db: Db,
+  dateKey: string,
+  excludeReservationId?: ObjectId,
+): Promise<IntervalMs[]> {
+  const filter: Record<string, unknown> = {
+    dateKey,
+    reservationStatus: { $in: [...ACTIVE_STATUSES] },
+  };
+  if (excludeReservationId) {
+    filter._id = { $ne: excludeReservationId };
+  }
   const rows = await db
     .collection(COLLECTION)
-    .find(
-      { dateKey, reservationStatus: { $in: [...ACTIVE_STATUSES] } },
-      { projection: { startsAt: 1, durationMinutes: 1, treatmentId: 1 } },
-    )
+    .find(filter, { projection: { startsAt: 1, durationMinutes: 1, treatmentId: 1 } })
     .toArray();
 
   return rows.map((r) => {
@@ -145,7 +160,8 @@ export async function reservationWouldExceedSalonCapacity(
   dateKey: string,
   candidate: IntervalMs,
   getEffectiveCap?: (instantMs: number) => number,
+  excludeReservationId?: ObjectId,
 ): Promise<boolean> {
-  const busy = await loadBusyIntervalsMs(db, dateKey);
+  const busy = await loadBusyIntervalsMs(db, dateKey, excludeReservationId);
   return !canPlaceReservationSlot(dateKey, candidate, busy, getEffectiveCap);
 }

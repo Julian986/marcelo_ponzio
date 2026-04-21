@@ -126,6 +126,14 @@ export function MisTurnosClient() {
                   </span>
                 ) : null}
               </div>
+              {tab === "upcoming" && (r.reservationStatus === "confirmed" || r.reservationStatus === "pending_payment") ? (
+                <Link
+                  href={`/perfil/mis-turnos/${encodeURIComponent(r.id)}/reprogramar`}
+                  className="mt-3 inline-flex cursor-pointer text-[13px] font-semibold text-[var(--premium-gold)] underline-offset-2 hover:underline"
+                >
+                  Cambiar horario
+                </Link>
+              ) : null}
             </li>
           ))}
         </ul>

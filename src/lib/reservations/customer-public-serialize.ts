@@ -3,6 +3,7 @@ import type { ReservationDoc, ReservationSource, ReservationStatus } from "./typ
 export type CustomerReservationPublic = {
   id: string;
   customerName: string;
+  treatmentId: string;
   treatmentName: string;
   subtitle: string;
   category: string;
@@ -24,6 +25,7 @@ export function serializeReservationForCustomer(r: ReservationDoc): CustomerRese
   return {
     id: r._id.toHexString(),
     customerName: String(r.customerName ?? "").trim() || "Cliente",
+    treatmentId: String(r.treatmentId ?? "").trim(),
     treatmentName: r.treatmentName,
     subtitle: r.subtitle,
     category: r.category,

@@ -111,6 +111,38 @@ export async function loadExpandedAgendaBlocksForDate(db: Db, dateKey: string): 
   return { salon, chair1, chair2 };
 }
 
+/** Bloqueos de agenda que aplican a `dateKey` (incluye notas y alcance para UI). */
+export async function listSalonAgendaBlocksApplyingToDateKey(db: Db, dateKey: string): Promise<SalonAgendaBlockDoc[]> {
+  await ensureAgendaBlockIndexes(db);
+  const wd = parseDateKeyLocal(dateKey)?.getDay();
+  if (wd === undefined) return [];
+
+  const col = db.collection<SalonAgendaBlockDoc>(AGENDA_BLOCKS_COLLECTION);
+  const rows = await col
+    .find({
+      $or: [
+        {
+          anchorDateKey: dateKey,
+          $or: [{ recurrence: null }, { recurrence: { $exists: false } }],
+        },
+        {
+          "recurrence.type": "weekly",
+          anchorWeekday: wd,
+          anchorDateKey: { $lte: dateKey },
+          $or: [
+            { "recurrence.untilDateKey": null },
+            { "recurrence.untilDateKey": { $exists: false } },
+            { "recurrence.untilDateKey": "" },
+            { "recurrence.untilDateKey": { $gte: dateKey } },
+          ],
+        },
+      ],
+    })
+    .toArray();
+
+  return rows.filter((doc) => agendaBlockAppliesToDateKey(doc, dateKey));
+}
+
 function instantInsideOpenInterval(iv: IntervalMs, instantMs: number): boolean {
   return iv.startMs < instantMs && instantMs < iv.endMs;
 }

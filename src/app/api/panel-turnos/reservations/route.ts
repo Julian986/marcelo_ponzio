@@ -10,6 +10,7 @@ import type { ReservationDoc } from "@/lib/reservations/types";
 function serialize(r: ReservationDoc) {
   return {
     id: r._id.toHexString(),
+    treatmentId: r.treatmentId,
     treatmentName: r.treatmentName,
     subtitle: r.subtitle,
     category: r.category,

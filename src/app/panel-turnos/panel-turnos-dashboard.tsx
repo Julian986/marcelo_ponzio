@@ -27,6 +27,7 @@ import { panelDurationLabel } from "@/lib/treatments/catalog";
 
 export type PanelReservation = {
   id: string;
+  treatmentId: string;
   treatmentName: string;
   subtitle: string;
   category: string;
@@ -491,6 +492,14 @@ export function PanelTurnosDashboard() {
                                 <MessageCircle className="h-3.5 w-3.5" strokeWidth={2} />
                                 WhatsApp
                               </a>
+                            ) : null}
+                            {r.reservationStatus === "confirmed" || r.reservationStatus === "pending_payment" ? (
+                              <Link
+                                href={`/panel-turnos/reprogramar/${encodeURIComponent(r.id)}`}
+                                className="inline-flex cursor-pointer items-center gap-1 rounded-full border border-[var(--premium-gold)]/35 bg-[var(--premium-gold)]/10 px-3 py-1.5 text-[11px] font-semibold text-[var(--premium-gold)] transition hover:bg-[var(--premium-gold)]/16"
+                              >
+                                Reprogramar
+                              </Link>
                             ) : null}
                           </div>
                         </div>

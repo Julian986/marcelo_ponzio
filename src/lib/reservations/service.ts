@@ -3,7 +3,7 @@ import type { Db, ObjectId } from "mongodb";
 import { MongoServerError, ObjectId as ObjectIdCtor } from "mongodb";
 
 import { buildCapGetterForDate } from "@/lib/booking/agenda-blocks";
-import { computeBookableSlots } from "@/lib/booking/compute-bookable-slots";
+import { computeBookableSlots, type BookingSlotScope } from "@/lib/booking/compute-bookable-slots";
 import { formatSalonDisplayDate } from "@/lib/booking/salon-availability";
 import { canonicalPhoneDigitsAR } from "@/lib/customer/phone-canonical-ar";
 import { isPublicLeadTimeViolated } from "@/lib/booking/public-slot-lead";
@@ -388,6 +388,130 @@ export async function findReservationByHexId(db: Db, hexId: string): Promise<Res
   } catch {
     return null;
   }
+}
+
+const RESCHEDULEABLE_STATUSES: ReservationStatus[] = ["confirmed", "pending_payment"];
+
+/**
+ * Cambia día/hora de una reserva (mismo tratamiento y duración).
+ * Cliente: solo su WhatsApp; panel: cualquier turno movible.
+ */
+export async function rescheduleReservation(
+  db: Db,
+  input: {
+    reservationHexId: string;
+    newDateKey: string;
+    newTimeLocal: string;
+    now: Date;
+    actor: "panel" | "customer";
+    customerCanonicalDigits?: string | null;
+  },
+): Promise<{ ok: true } | { error: string; code?: string }> {
+  await ensureReservationIndexes(db);
+  const hex = input.reservationHexId.trim();
+  const doc = await findReservationByHexId(db, hex);
+  if (!doc) {
+    return { error: "Turno no encontrado.", code: "NOT_FOUND" };
+  }
+  if (!RESCHEDULEABLE_STATUSES.includes(doc.reservationStatus)) {
+    return { error: "Este turno no se puede reprogramar (cancelado o finalizado).", code: "NOT_MOVABLE" };
+  }
+
+  if (input.actor === "customer") {
+    const canon = input.customerCanonicalDigits?.trim();
+    if (!canon) {
+      return { error: "Tenés que iniciar sesión en tu perfil.", code: "UNAUTHORIZED" };
+    }
+    if (canonicalPhoneDigitsAR(doc.customerPhone) !== canon) {
+      return { error: "No podés modificar un turno de otro cliente.", code: "FORBIDDEN" };
+    }
+  }
+
+  const newKey = input.newDateKey.trim();
+  const newTime = input.newTimeLocal.trim();
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(newKey) || !/^\d{2}:\d{2}$/.test(newTime)) {
+    return { error: "Fecha u horario inválidos.", code: "INVALID_SLOT" };
+  }
+
+  if (doc.dateKey === newKey && doc.timeLocal === newTime) {
+    return { error: "Elegí un día u horario distinto al actual.", code: "NO_CHANGE" };
+  }
+
+  const startsAtNew = computeStartsAtUtc(newKey, newTime);
+  if (!startsAtNew) {
+    return { error: "Fecha u horario inválidos.", code: "INVALID_SLOT" };
+  }
+
+  if (input.actor === "customer" && doc.source === "app_turnos") {
+    if (isPublicLeadTimeViolated(newKey, startsAtNew, input.now)) {
+      return {
+        error: "Los turnos web se pueden reservar con al menos 2 días de anticipación.",
+        code: "LEAD_TIME",
+      };
+    }
+  }
+
+  const treatmentId = doc.treatmentId.trim();
+  const catalog = findSalonTreatmentById(treatmentId);
+  const duration =
+    typeof doc.durationMinutes === "number" && Number.isFinite(doc.durationMinutes) && doc.durationMinutes > 0
+      ? doc.durationMinutes
+      : catalog?.durationMinutes ?? 60;
+
+  const slotScope: BookingSlotScope =
+    input.actor === "panel" ? "panel" : doc.source === "panel" ? "panel" : "public";
+
+  const allowed = await computeBookableSlots(db, {
+    dateKey: newKey,
+    treatmentId,
+    now: input.now,
+    scope: slotScope,
+    excludeReservationHexId: hex,
+  });
+  if (!allowed.includes(newTime)) {
+    return { error: "Ese horario no está disponible para este servicio.", code: "SLOT_UNAVAILABLE" };
+  }
+
+  let excludeOid: ObjectId;
+  try {
+    excludeOid = new ObjectIdCtor(hex);
+  } catch {
+    return { error: "Turno no encontrado.", code: "NOT_FOUND" };
+  }
+
+  const interval = slotIntervalMs(newKey, newTime, duration);
+  if (!interval) {
+    return { error: "Fecha u horario inválidos.", code: "INVALID_SLOT" };
+  }
+  const capGetter = await buildCapGetterForDate(db, newKey);
+  if (await reservationWouldExceedSalonCapacity(db, newKey, interval, capGetter, excludeOid)) {
+    return {
+      error: "Ese horario ya no está disponible (cupos llenos en esa franja).",
+      code: "SLOT_OVERLAP",
+    };
+  }
+
+  const displayDate = formatSalonDisplayDate(newKey);
+  const updatedAt = new Date();
+  const result = await db.collection<ReservationDoc>(COLLECTION).updateOne(
+    { _id: doc._id, reservationStatus: doc.reservationStatus },
+    {
+      $set: {
+        dateKey: newKey,
+        timeLocal: newTime,
+        startsAt: startsAtNew,
+        displayDate,
+        updatedAt,
+      },
+      $unset: { waReminder24hSentAt: "" },
+    },
+  );
+
+  if (result.modifiedCount !== 1) {
+    return { error: "No se pudo actualizar el turno. Probá de nuevo.", code: "CONFLICT" };
+  }
+
+  return { ok: true as const };
 }
 
 export async function attachPreferenceToReservation(
