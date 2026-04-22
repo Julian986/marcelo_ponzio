@@ -270,7 +270,7 @@ export type PanelReservationInsertInput = {
 const PANEL_NOTES_MAX_LEN = 2000;
 
 /**
- * Alta manual desde el panel (sin Mercado Pago). Valida cupos (9–11:30: hasta 2 turnos solapados).
+ * Alta manual desde el panel (sin Mercado Pago). Valida cupos (9–11:30: hasta 3 turnos solapados).
  */
 export async function insertPanelReservation(
   db: Db,

@@ -7,7 +7,7 @@ import { findSalonTreatmentById } from "@/lib/treatments/catalog";
 const COLLECTION = "reservations";
 const ACTIVE_STATUSES = ["pending_payment", "confirmed"] as const;
 
-/** Inicio/fin (minutos desde medianoche ART) con hasta 2 turnos simultáneos. Inclusive 11:30. */
+/** Inicio/fin (minutos desde medianoche ART) con hasta 3 turnos simultáneos. Inclusive 11:30. */
 const DOUBLE_CAPACITY_START_MIN = 9 * 60;
 const DOUBLE_CAPACITY_END_MIN = 11 * 60 + 30;
 
@@ -33,14 +33,14 @@ export function slotIntervalMs(
   return { startMs, endMs };
 }
 
-/** Capacidad del salón en ese instante: 2 entre 9:00 y 11:30 (ART, mismo dateKey), 1 fuera. */
+/** Capacidad del salón en ese instante: 3 entre 9:00 y 11:30 (ART, mismo dateKey), 1 fuera. */
 export function salonConcurrentCapAtInstant(dateKey: string, instantMs: number): number {
   const dayKey = formatInTimeZone(new Date(instantMs), RESERVATION_TZ, "yyyy-MM-dd");
   if (dayKey !== dateKey) return 1;
   const hm = formatInTimeZone(new Date(instantMs), RESERVATION_TZ, "HH:mm");
   const [h, m] = hm.split(":").map(Number);
   const mins = h * 60 + m;
-  if (mins >= DOUBLE_CAPACITY_START_MIN && mins <= DOUBLE_CAPACITY_END_MIN) return 2;
+  if (mins >= DOUBLE_CAPACITY_START_MIN && mins <= DOUBLE_CAPACITY_END_MIN) return 3;
   return 1;
 }
 
@@ -97,7 +97,7 @@ function capacityBoundaryInstantsMs(dateKey: string): number[] {
 
 /**
  * ¿Se puede agregar este intervalo sin superar la capacidad por franja?
- * Entre 9:00 y 11:30 ART pueden convivir hasta 2 turnos que se solapen; fuera, 1.
+ * Entre 9:00 y 11:30 ART pueden convivir hasta 3 turnos que se solapen; fuera, 1.
  * `getEffectiveCap` permite reducir cupos por bloqueos de agenda (silla / salón).
  */
 export function canPlaceReservationSlot(
