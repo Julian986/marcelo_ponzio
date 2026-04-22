@@ -28,6 +28,8 @@ export function parseCreateReservationBody(
   const customerName = String(b.customerName ?? "").trim();
   const customerPhone = String(b.customerPhone ?? "").trim();
   const whatsappOptIn = b.whatsappOptIn === true;
+  const serviceIdsRaw = Array.isArray(b.serviceIds) ? b.serviceIds : [];
+  const serviceIds = serviceIdsRaw.map((v) => String(v ?? "").trim()).filter(Boolean);
 
   if (!treatmentId) return { ok: false, message: "Falta el tratamiento." };
   if (!treatmentName) return { ok: false, message: "Falta el nombre del tratamiento." };
@@ -39,6 +41,20 @@ export function parseCreateReservationBody(
   const d = digitsOnly(customerPhone);
   if (d.length < 10 || d.length > 15) return { ok: false, message: "El teléfono no es válido." };
   if (!whatsappOptIn) return { ok: false, message: "Tenés que aceptar recordatorios por WhatsApp." };
+  if (serviceIds.length > 4) return { ok: false, message: "Podés combinar hasta 4 servicios por turno." };
+  if (serviceIds.includes("servicio-completo") && serviceIds.length > 1) {
+    return {
+      ok: false,
+      message: "Servicio completo ya incluye varios servicios y no se puede combinar con otros.",
+    };
+  }
+  const keratinaIdx = serviceIds.indexOf("keratina");
+  if (keratinaIdx >= 0 && keratinaIdx !== serviceIds.length - 1) {
+    return {
+      ok: false,
+      message: "Keratina solo se puede combinar si queda al final del turno.",
+    };
+  }
 
   return {
     ok: true,
@@ -53,6 +69,7 @@ export function parseCreateReservationBody(
       customerName,
       customerPhone,
       whatsappOptIn,
+      serviceIds,
     },
   };
 }

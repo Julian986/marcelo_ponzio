@@ -1,8 +1,8 @@
-import { cookies } from "next/headers";
+﻿import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 
 import { buildSalonCalendarItems } from "@/lib/booking/salon-availability";
-import { computeBookableSlots } from "@/lib/booking/compute-bookable-slots";
+import { computeBookableSlots, computeBookableSlotsForTreatmentIds } from "@/lib/booking/compute-bookable-slots";
 import { getDb } from "@/lib/mongodb";
 import { verifyPanelCookie } from "@/lib/panel-turnos-auth";
 import { findSalonTreatmentById } from "@/lib/treatments/catalog";
@@ -14,20 +14,44 @@ export async function GET(request: Request) {
   const year = Number(url.searchParams.get("year"));
   const monthIndex = Number(url.searchParams.get("monthIndex"));
   const treatmentId = url.searchParams.get("treatmentId")?.trim() ?? "";
+  const serviceIds = (url.searchParams.get("serviceIds")?.trim() ?? "")
+    .split(",")
+    .map((v) => v.trim())
+    .filter(Boolean);
   const scopeRaw = url.searchParams.get("scope")?.trim().toLowerCase() ?? "public";
   const scope = scopeRaw === "panel" ? "panel" : "public";
 
   if (!Number.isFinite(year) || year < 2000 || year > 2100) {
-    return NextResponse.json({ error: "Año inválido." }, { status: 400 });
+    return NextResponse.json({ error: "Anio invalido." }, { status: 400 });
   }
   if (!Number.isFinite(monthIndex) || monthIndex < 0 || monthIndex > 11) {
-    return NextResponse.json({ error: "Mes inválido (monthIndex 0–11)." }, { status: 400 });
+    return NextResponse.json({ error: "Mes invalido (monthIndex 0-11)." }, { status: 400 });
   }
-  if (!treatmentId) {
+  if (!treatmentId && serviceIds.length === 0) {
     return NextResponse.json({ error: "Falta el tratamiento." }, { status: 400 });
   }
-  if (!findSalonTreatmentById(treatmentId)) {
-    return NextResponse.json({ error: "Tratamiento inválido." }, { status: 400 });
+  if (serviceIds.length > 0) {
+    if (serviceIds.length > 4) {
+      return NextResponse.json({ error: "Maximo 4 servicios por turno." }, { status: 400 });
+    }
+    if (serviceIds.some((id) => !findSalonTreatmentById(id))) {
+      return NextResponse.json({ error: "Hay servicios invalidos." }, { status: 400 });
+    }
+    if (serviceIds.includes("servicio-completo") && serviceIds.length > 1) {
+      return NextResponse.json(
+        { error: "Servicio completo no se puede combinar con otros servicios." },
+        { status: 400 },
+      );
+    }
+    const keratinaIdx = serviceIds.indexOf("keratina");
+    if (keratinaIdx >= 0 && keratinaIdx !== serviceIds.length - 1) {
+      return NextResponse.json(
+        { error: "Keratina solo se puede combinar si queda al final del turno." },
+        { status: 400 },
+      );
+    }
+  } else if (!findSalonTreatmentById(treatmentId)) {
+    return NextResponse.json({ error: "Tratamiento invalido." }, { status: 400 });
   }
 
   if (scope === "panel") {
@@ -43,12 +67,20 @@ export async function GET(request: Request) {
     const keys = buildSalonCalendarItems(year, monthIndex).map((d) => d.value);
     const entries = await Promise.all(
       keys.map(async (dateKey) => {
-        const slots = await computeBookableSlots(db, {
-          dateKey,
-          treatmentId,
-          now,
-          scope,
-        });
+        const slots =
+          serviceIds.length > 0
+            ? await computeBookableSlotsForTreatmentIds(db, {
+                dateKey,
+                treatmentIds: serviceIds,
+                now,
+                scope,
+              })
+            : await computeBookableSlots(db, {
+                dateKey,
+                treatmentId,
+                now,
+                scope,
+              });
         return [dateKey, slots.length > 0] as const;
       }),
     );

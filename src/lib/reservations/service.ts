@@ -3,7 +3,11 @@ import type { Db, ObjectId } from "mongodb";
 import { MongoServerError, ObjectId as ObjectIdCtor } from "mongodb";
 
 import { buildCapGetterForDate } from "@/lib/booking/agenda-blocks";
-import { computeBookableSlots, type BookingSlotScope } from "@/lib/booking/compute-bookable-slots";
+import {
+  computeBookableSlots,
+  computeBookableSlotsForTreatmentIds,
+  type BookingSlotScope,
+} from "@/lib/booking/compute-bookable-slots";
 import { formatSalonDisplayDate } from "@/lib/booking/salon-availability";
 import { canonicalPhoneDigitsAR } from "@/lib/customer/phone-canonical-ar";
 import { isPublicLeadTimeViolated } from "@/lib/booking/public-slot-lead";
@@ -12,7 +16,13 @@ import { SALON_TREATMENTS, findSalonTreatmentById, type SalonTreatment } from "@
 
 import { backfillCustomerPhoneDigitsBatch } from "@/lib/reservations/customer-queries";
 
-import type { CreateReservationInput, MpWebhookEventDoc, ReservationDoc, ReservationStatus } from "./types";
+import type {
+  CreateReservationInput,
+  MpWebhookEventDoc,
+  ReservationDoc,
+  ReservationServiceItem,
+  ReservationStatus,
+} from "./types";
 
 const COLLECTION = "reservations";
 const WEBHOOK_LOGS = "mp_webhook_events";
@@ -74,17 +84,73 @@ export async function ensureReservationIndexes(db: Db) {
 }
 
 type PublicTurnosValidation =
-  | { ok: true; treatment: SalonTreatment; startsAt: Date; now: Date }
+  | {
+      ok: true;
+      startsAt: Date;
+      now: Date;
+      primaryTreatment: SalonTreatment;
+      serviceItems: ReservationServiceItem[];
+      totalDurationMinutes: number;
+      isCombo: boolean;
+    }
   | { ok: false; error: string; code?: string };
+
+function buildServiceItemsForInput(input: CreateReservationInput): {
+  primaryTreatment: SalonTreatment;
+  serviceItems: ReservationServiceItem[];
+  isCombo: boolean;
+} | null {
+  const comboIds = (input.serviceIds ?? []).map((v) => v.trim()).filter(Boolean);
+  const uniqueIds = [...new Set(comboIds)];
+  if (uniqueIds.length > 4) return null;
+  if (uniqueIds.includes("servicio-completo") && uniqueIds.length > 1) return null;
+  const keratinaIdx = uniqueIds.indexOf("keratina");
+  if (keratinaIdx >= 0 && keratinaIdx !== uniqueIds.length - 1) return null;
+  if (uniqueIds.length > 0) {
+    const treatments = uniqueIds
+      .map((id) => findSalonTreatmentById(id))
+      .filter((t): t is NonNullable<typeof t> => Boolean(t));
+    if (treatments.length !== uniqueIds.length) return null;
+    const items = treatments.map((t) => ({
+        treatmentId: t.id,
+        treatmentName: t.name,
+        subtitle: t.subtitle,
+        category: t.category,
+        durationMinutes: t.durationMinutes,
+      })) satisfies ReservationServiceItem[];
+    return {
+      primaryTreatment: treatments[0] as SalonTreatment,
+      serviceItems: items,
+      isCombo: items.length > 1,
+    };
+  }
+  const treatment = findSalonTreatmentById(input.treatmentId.trim());
+  if (!treatment) return null;
+  return {
+    primaryTreatment: treatment,
+    serviceItems: [
+      {
+        treatmentId: treatment.id,
+        treatmentName: treatment.name,
+        subtitle: treatment.subtitle,
+        category: treatment.category,
+        durationMinutes: treatment.durationMinutes,
+      },
+    ],
+    isCombo: false,
+  };
+}
 
 async function validatePublicTurnosReservation(
   db: Db,
   input: CreateReservationInput,
 ): Promise<PublicTurnosValidation> {
-  const treatment = findSalonTreatmentById(input.treatmentId.trim());
-  if (!treatment) {
+  const parsedServices = buildServiceItemsForInput(input);
+  if (!parsedServices) {
     return { ok: false, error: "Tratamiento inválido.", code: "INVALID_TREATMENT" };
   }
+  const { primaryTreatment, serviceItems, isCombo } = parsedServices;
+  const totalDurationMinutes = serviceItems.reduce((acc, s) => acc + s.durationMinutes, 0);
 
   const startsAt = computeStartsAtUtc(input.dateKey, input.timeLocal);
   if (!startsAt) {
@@ -102,12 +168,20 @@ async function validatePublicTurnosReservation(
 
   await ensureReservationIndexes(db);
 
-  const allowedPublic = await computeBookableSlots(db, {
-    dateKey: input.dateKey,
-    treatmentId: treatment.id,
-    now,
-    scope: "public",
-  });
+  const allowedPublic =
+    serviceItems.length > 1
+      ? await computeBookableSlotsForTreatmentIds(db, {
+          dateKey: input.dateKey,
+          treatmentIds: serviceItems.map((s) => s.treatmentId),
+          now,
+          scope: "public",
+        })
+      : await computeBookableSlots(db, {
+          dateKey: input.dateKey,
+          treatmentId: primaryTreatment.id,
+          now,
+          scope: "public",
+        });
   if (!allowedPublic.includes(input.timeLocal.trim())) {
     return {
       ok: false,
@@ -116,7 +190,7 @@ async function validatePublicTurnosReservation(
     };
   }
 
-  const interval = slotIntervalMs(input.dateKey, input.timeLocal.trim(), treatment.durationMinutes);
+  const interval = slotIntervalMs(input.dateKey, input.timeLocal.trim(), totalDurationMinutes);
   if (!interval) {
     return { ok: false, error: "Fecha u horario inválidos.", code: "INVALID_SLOT" };
   }
@@ -129,7 +203,7 @@ async function validatePublicTurnosReservation(
     };
   }
 
-  return { ok: true, treatment, startsAt, now };
+  return { ok: true, startsAt, now, primaryTreatment, serviceItems, totalDurationMinutes, isCombo };
 }
 
 export async function insertPendingReservation(
@@ -141,21 +215,26 @@ export async function insertPendingReservation(
 > {
   const v = await validatePublicTurnosReservation(db, input);
   if (!v.ok) return { error: v.error, code: v.code };
-  const { treatment, startsAt, now } = v;
+  const { primaryTreatment, serviceItems, totalDurationMinutes, isCombo, startsAt, now } = v;
 
   const checkoutToken = randomBytes(32).toString("hex");
   const paymentDeadlineAt = new Date(now.getTime() + pendingTtlMs());
+  const treatmentNameCombo = serviceItems.map((s) => s.treatmentName).join(" + ");
+  const subtitleCombo = `${serviceItems.length} servicios · ${totalDurationMinutes} min`;
 
   const doc = {
-    treatmentId: input.treatmentId,
-    treatmentName: input.treatmentName,
-    subtitle: input.subtitle,
-    category: input.category,
+    treatmentId: primaryTreatment.id,
+    treatmentName: isCombo ? treatmentNameCombo : primaryTreatment.name,
+    subtitle: isCombo ? subtitleCombo : primaryTreatment.subtitle,
+    category: primaryTreatment.category,
     dateKey: input.dateKey,
     timeLocal: input.timeLocal,
     displayDate: input.displayDate,
     startsAt,
-    durationMinutes: treatment.durationMinutes,
+    durationMinutes: totalDurationMinutes,
+    totalDurationMinutes,
+    serviceItems,
+    bookingMode: isCombo ? "combo" : "single",
     customerName: input.customerName,
     customerPhone: input.customerPhone,
     customerPhoneDigits: canonicalPhoneDigitsAR(input.customerPhone.trim()),
@@ -197,22 +276,27 @@ export async function insertPublicConfirmedReservationWithoutPayment(
 ): Promise<{ ok: true; id: string; externalReference: string } | { error: string; code?: string }> {
   const v = await validatePublicTurnosReservation(db, input);
   if (!v.ok) return { error: v.error, code: v.code };
-  const { treatment, startsAt, now } = v;
+  const { primaryTreatment, serviceItems, totalDurationMinutes, isCombo, startsAt, now } = v;
 
   const dateKey = input.dateKey.trim();
   const timeLocal = input.timeLocal.trim();
   const displayDate = formatSalonDisplayDate(dateKey);
+  const treatmentNameCombo = serviceItems.map((s) => s.treatmentName).join(" + ");
+  const subtitleCombo = `${serviceItems.length} servicios · ${totalDurationMinutes} min`;
 
   const doc = {
-    treatmentId: treatment.id,
-    treatmentName: treatment.name,
-    subtitle: treatment.subtitle,
-    category: treatment.category,
+    treatmentId: primaryTreatment.id,
+    treatmentName: isCombo ? treatmentNameCombo : primaryTreatment.name,
+    subtitle: isCombo ? subtitleCombo : primaryTreatment.subtitle,
+    category: primaryTreatment.category,
     dateKey,
     timeLocal,
     displayDate,
     startsAt,
-    durationMinutes: treatment.durationMinutes,
+    durationMinutes: totalDurationMinutes,
+    totalDurationMinutes,
+    serviceItems,
+    bookingMode: isCombo ? "combo" : "single",
     customerName: input.customerName.trim(),
     customerPhone: input.customerPhone.trim(),
     customerPhoneDigits: canonicalPhoneDigitsAR(input.customerPhone.trim()),

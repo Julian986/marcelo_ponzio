@@ -25,12 +25,12 @@ export async function POST(request: Request) {
 
   try {
     const db = await getDb();
-    const treatment = findSalonTreatmentById(parsed.value.treatmentId.trim());
-    if (!treatment) {
+    const ids = (parsed.value.serviceIds ?? []).map((v) => v.trim()).filter(Boolean);
+    const normalizedIds = ids.length > 0 ? ids : [parsed.value.treatmentId.trim()];
+    if (normalizedIds.length === 0 || normalizedIds.some((id) => !findSalonTreatmentById(id))) {
       return NextResponse.json({ error: "Tratamiento inválido.", code: "INVALID_TREATMENT" }, { status: 400 });
     }
-
-    const needsDeposit = treatmentRequiresPublicDeposit(treatment.id);
+    const needsDeposit = normalizedIds.some((id) => treatmentRequiresPublicDeposit(id));
 
     if (needsDeposit) {
       const result = await insertPendingReservation(db, parsed.value);

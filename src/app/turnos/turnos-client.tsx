@@ -12,6 +12,7 @@ import {
   isLikelyWhatsappNumber,
 } from "@/lib/booking/salon-availability";
 import { treatmentRequiresPublicDeposit } from "@/lib/reservations/public-deposit";
+import { findSalonTreatmentById } from "@/lib/treatments/catalog";
 
 type TurnosClientProps = {
   initialTreatment?: string;
@@ -30,8 +31,10 @@ export default function TurnosClient({ initialTreatment = "" }: TurnosClientProp
   );
 
   const [selectedTreatmentId, setSelectedTreatmentId] = useState<string>(initialMatch?.id ?? "");
+  const [selectedServiceIds, setSelectedServiceIds] = useState<string[]>(initialMatch ? [initialMatch.id] : []);
   const [selectedDate, setSelectedDate] = useState<string>("");
   const [selectedTime, setSelectedTime] = useState<string>("");
+  const [serviceLimitHint, setServiceLimitHint] = useState<string | null>(null);
   const [treatmentFirstHintVisible, setTreatmentFirstHintVisible] = useState(false);
   const [customerName, setCustomerName] = useState("");
   const [customerPhone, setCustomerPhone] = useState("");
@@ -50,12 +53,40 @@ export default function TurnosClient({ initialTreatment = "" }: TurnosClientProp
     () => SALON_TREATMENT_OPTIONS.find((option) => option.id === selectedTreatmentId),
     [selectedTreatmentId],
   );
-
-  const requiresDeposit = Boolean(
-    selectedTreatment && treatmentRequiresPublicDeposit(selectedTreatment.id),
+  const selectedServices = useMemo(
+    () =>
+      selectedServiceIds.flatMap((id) => {
+        const found = SALON_TREATMENT_OPTIONS.find((o) => o.id === id);
+        return found ? [found] : [];
+      }),
+    [selectedServiceIds],
   );
+  const selectedServicesSummary = useMemo(
+    () => selectedServices.map((s) => s.name).join(" + "),
+    [selectedServices],
+  );
+  const totalSelectedDurationMinutes = useMemo(
+    () =>
+      selectedServiceIds.reduce((acc, id) => {
+        const t = findSalonTreatmentById(id);
+        return acc + (t?.durationMinutes ?? 0);
+      }, 0),
+    [selectedServiceIds],
+  );
+  const totalSelectedDurationLabel = useMemo(() => {
+    const total = totalSelectedDurationMinutes;
+    if (total <= 0) return "";
+    const h = Math.floor(total / 60);
+    const m = total % 60;
+    if (h > 0 && m > 0) return `Duración ${h} h ${m} min`;
+    if (h > 0) return `Duración ${h} h`;
+    return `Duración ${m} min`;
+  }, [totalSelectedDurationMinutes]);
+  const primaryService = selectedServices[0];
 
-  const hasSlot = Boolean(selectedTreatment && selectedDate && selectedTime);
+  const requiresDeposit = selectedServices.some((s) => treatmentRequiresPublicDeposit(s.id));
+
+  const hasSlot = Boolean(selectedServices.length > 0 && selectedDate && selectedTime);
   const datosComplete = Boolean(
     customerName.trim().length >= 2 &&
       isLikelyWhatsappNumber(customerPhone) &&
@@ -63,7 +94,7 @@ export default function TurnosClient({ initialTreatment = "" }: TurnosClientProp
   );
   const showWhatsappInvalidHint =
     customerPhone.trim().length >= 8 && !isLikelyWhatsappNumber(customerPhone);
-  const activeStep = !selectedTreatment
+  const activeStep = selectedServices.length === 0
     ? 1
     : !selectedDate
       ? 2
@@ -74,8 +105,8 @@ export default function TurnosClient({ initialTreatment = "" }: TurnosClientProp
           : 5;
 
   useEffect(() => {
-    if (selectedTreatment) setTreatmentFirstHintVisible(false);
-  }, [selectedTreatment]);
+    if (selectedServices.length > 0) setTreatmentFirstHintVisible(false);
+  }, [selectedServices.length]);
 
   useEffect(() => {
     if (!treatmentFirstHintVisible) return;
@@ -88,7 +119,7 @@ export default function TurnosClient({ initialTreatment = "" }: TurnosClientProp
   }, [selectedTreatmentId, selectedDate, selectedTime]);
 
   useEffect(() => {
-    if (!selectedDate || !selectedTreatmentId) {
+    if (!selectedDate || selectedServiceIds.length === 0) {
       setRemoteSlots(undefined);
       return;
     }
@@ -96,7 +127,8 @@ export default function TurnosClient({ initialTreatment = "" }: TurnosClientProp
     setRemoteSlots(null);
     const q = new URLSearchParams({
       dateKey: selectedDate,
-      treatmentId: selectedTreatmentId,
+      treatmentId: selectedServiceIds[0] ?? "",
+      serviceIds: selectedServiceIds.join(","),
       scope: "public",
     });
     fetch(`/api/booking/slots?${q.toString()}`)
@@ -112,15 +144,21 @@ export default function TurnosClient({ initialTreatment = "" }: TurnosClientProp
     return () => {
       cancelled = true;
     };
-  }, [selectedDate, selectedTreatmentId]);
+  }, [selectedDate, selectedServiceIds]);
 
   useEffect(() => {
-    if (!selectedDate || !selectedTime || !selectedTreatmentId) return;
+    if (!selectedDate || !selectedTime || selectedServiceIds.length === 0) return;
     if (remoteSlots === undefined || remoteSlots === null) return;
     if (!remoteSlots.includes(selectedTime)) {
       setSelectedTime("");
     }
-  }, [selectedDate, selectedTime, selectedTreatmentId, remoteSlots]);
+  }, [selectedDate, selectedTime, selectedServiceIds, remoteSlots]);
+
+  useEffect(() => {
+    if (!serviceLimitHint) return;
+    const t = window.setTimeout(() => setServiceLimitHint(null), 3200);
+    return () => window.clearTimeout(t);
+  }, [serviceLimitHint]);
 
   const scheduleScrollToPaymentSection = useCallback(() => {
     if (!hasSlot) return;
@@ -156,17 +194,18 @@ export default function TurnosClient({ initialTreatment = "" }: TurnosClientProp
   }, [hasSlot, selectedTime]);
 
   const handleMercadoPagoCheckout = async () => {
-    if (!selectedTreatment || !selectedDate || !selectedTime || !datosComplete) {
+    if (!primaryService || selectedServices.length === 0 || !selectedDate || !selectedTime || !datosComplete) {
       return;
     }
     setConfirmError(null);
     setCheckoutLoading(true);
     try {
       const pendingBody = {
-        treatmentId: selectedTreatment.id,
-        treatmentName: selectedTreatment.name,
-        subtitle: selectedTreatment.subtitle,
-        category: selectedTreatment.category,
+        treatmentId: primaryService.id,
+        treatmentName: selectedServicesSummary,
+        subtitle: `${selectedServices.length} servicio${selectedServices.length === 1 ? "" : "s"} combinados`,
+        category: primaryService.category,
+        serviceIds: selectedServices.map((s) => s.id),
         dateKey: selectedDate,
         timeLocal: selectedTime,
         displayDate: formatSalonDisplayDate(selectedDate),
@@ -196,14 +235,14 @@ export default function TurnosClient({ initialTreatment = "" }: TurnosClientProp
 
       if (dataPending.bookingMode === "confirmed") {
         gaEvent("reservation_confirmed_no_deposit", {
-          treatment_id: selectedTreatment.id,
-          treatment_name: selectedTreatment.name,
+          treatment_id: primaryService.id,
+          treatment_name: selectedServicesSummary,
           date_key: selectedDate,
           time_local: selectedTime,
         });
         const qs = new URLSearchParams({
-          treatment: selectedTreatment.name,
-          subtitle: selectedTreatment.subtitle,
+          treatment: selectedServicesSummary,
+          subtitle: `${selectedServices.length} servicio${selectedServices.length === 1 ? "" : "s"} combinados`,
           date: formatSalonDisplayDate(selectedDate),
           time: selectedTime,
           name: customerName.trim(),
@@ -238,8 +277,8 @@ export default function TurnosClient({ initialTreatment = "" }: TurnosClientProp
       }
 
       const snapshot = {
-        treatment: selectedTreatment.name,
-        subtitle: selectedTreatment.subtitle,
+        treatment: selectedServicesSummary,
+        subtitle: `${selectedServices.length} servicio${selectedServices.length === 1 ? "" : "s"} combinados`,
         date: formatSalonDisplayDate(selectedDate),
         time: selectedTime,
         name: customerName.trim(),
@@ -248,8 +287,8 @@ export default function TurnosClient({ initialTreatment = "" }: TurnosClientProp
       };
       sessionStorage.setItem("mp_turno_snapshot", JSON.stringify(snapshot));
       gaEvent("reservation_checkout_start", {
-        treatment_id: selectedTreatment.id,
-        treatment_name: selectedTreatment.name,
+        treatment_id: primaryService.id,
+        treatment_name: selectedServicesSummary,
         date_key: selectedDate,
         time_local: selectedTime,
       });
@@ -274,17 +313,69 @@ export default function TurnosClient({ initialTreatment = "" }: TurnosClientProp
 
         <BookingPicker
           selectedTreatmentId={selectedTreatmentId}
-          onTreatmentIdChange={setSelectedTreatmentId}
+          onTreatmentIdChange={(id) => {
+            setSelectedTreatmentId(id);
+            setSelectedTime("");
+          }}
           selectedDate={selectedDate}
           onDateChange={setSelectedDate}
           selectedTime={selectedTime}
           onTimeChange={setSelectedTime}
           remoteTimeSlots={
-            selectedDate && selectedTreatmentId ? (remoteSlots ?? null) : undefined
+            selectedDate && selectedServiceIds.length > 0 ? (remoteSlots ?? null) : undefined
           }
+          selectedCountLabel={
+            selectedServices.length > 0
+              ? `${selectedServices.length} servicio${selectedServices.length === 1 ? "" : "s"} seleccionado${
+                  selectedServices.length === 1 ? "" : "s"
+                }`
+              : undefined
+          }
+          selectedDurationLabel={selectedServices.length > 0 ? totalSelectedDurationLabel : undefined}
+          summaryTitle={selectedServices.length > 0 ? selectedServicesSummary : undefined}
           bookingFocusRef={bookingFocusRef}
           treatmentFirstHintVisible={treatmentFirstHintVisible}
           onTreatmentFirstHintVisible={setTreatmentFirstHintVisible}
+          monthAvailabilityServiceIds={selectedServiceIds}
+          multiSelect
+          selectedTreatmentIds={selectedServiceIds}
+          onToggleTreatmentId={(id) => {
+            setSelectedServiceIds((prev) => {
+              if (prev.includes(id)) return prev.filter((x) => x !== id);
+              if (id === "servicio-completo" && prev.length > 0) {
+                setServiceLimitHint(
+                  "No podés seleccionar Servicio completo porque ya elegiste otros servicios.",
+                );
+                return prev;
+              }
+              if (prev.includes("servicio-completo")) {
+                setServiceLimitHint(
+                  "No podés agregar otro servicio porque ya seleccionaste Servicio completo.",
+                );
+                return prev;
+              }
+              if (id !== "keratina" && prev.includes("keratina")) {
+                setServiceLimitHint(
+                  "No podés agregar servicios después de Keratina. Si querés combinar, Keratina debe quedar al final.",
+                );
+                return prev;
+              }
+              if (prev.length >= 4) {
+                setServiceLimitHint("Máximo 4 servicios por turno.");
+                return prev;
+              }
+              return [...prev, id];
+            });
+            setSelectedTime("");
+          }}
+          onClearTreatmentIds={() => {
+            setSelectedServiceIds([]);
+            setSelectedTreatmentId("");
+            setSelectedTime("");
+          }}
+          comboHintText="Podés elegir hasta 4 servicios. Servicio completo va solo y Keratina debe quedar al final."
+          comboDurationLabel={totalSelectedDurationLabel}
+          comboAlertText={serviceLimitHint}
         />
 
         {hasSlot && (

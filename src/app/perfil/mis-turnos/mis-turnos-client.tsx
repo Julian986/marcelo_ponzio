@@ -6,7 +6,13 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 
 import type { CustomerReservationPublic } from "@/lib/reservations/customer-public-serialize";
 import { isUpcomingReservation } from "@/lib/reservations/customer-public-serialize";
-import { formatShortDateFromKey, reservationStatusLabel } from "@/lib/reservations/customer-ui-copy";
+import { reservationStatusLabel } from "@/lib/reservations/customer-ui-copy";
+
+function formatDayMonthFromKey(dateKey: string): string {
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(dateKey.trim());
+  if (!m) return dateKey;
+  return `${m[3]}/${m[2]}`;
+}
 
 export function MisTurnosClient() {
   const [rows, setRows] = useState<CustomerReservationPublic[] | null>(null);
@@ -109,9 +115,12 @@ export function MisTurnosClient() {
               key={r.id}
               className="rounded-2xl border border-white/8 bg-[#171717] px-4 py-4 shadow-[0_10px_28px_rgba(0,0,0,0.35)]"
             >
-              <p className="font-heading text-[22px] leading-none tracking-tight text-[var(--soft-gray)]">
-                <span className="text-[var(--premium-gold)]">{r.timeLocal}</span>
-                <span className="text-[var(--soft-gray)]/90"> · {formatShortDateFromKey(r.dateKey)}</span>
+              <p className="text-[16px] font-semibold leading-tight text-[var(--soft-gray)]">
+                <span className="text-[var(--premium-gold)]">
+                  {r.timeLocal}
+                  <span className="ml-1 text-[13px] font-medium text-[var(--premium-gold)]/75">hs</span>
+                </span>
+                <span className="text-[var(--soft-gray)]/90"> · {formatDayMonthFromKey(r.dateKey)}</span>
               </p>
               <p className="mt-1.5 text-[12px] text-[var(--soft-gray)]/52">{r.displayDate}</p>
               <p className="mt-2.5 text-[16px] font-semibold text-[var(--soft-gray)]">{r.treatmentName}</p>
@@ -129,7 +138,7 @@ export function MisTurnosClient() {
               {tab === "upcoming" && (r.reservationStatus === "confirmed" || r.reservationStatus === "pending_payment") ? (
                 <Link
                   href={`/perfil/mis-turnos/${encodeURIComponent(r.id)}/reprogramar`}
-                  className="mt-3 inline-flex cursor-pointer text-[13px] font-semibold text-[var(--premium-gold)] underline-offset-2 hover:underline"
+                  className="mt-3 inline-flex h-9 cursor-pointer items-center rounded-xl border border-[var(--premium-gold)]/45 bg-[var(--premium-gold)]/12 px-3 text-[12px] font-semibold text-[var(--premium-gold)] transition hover:bg-[var(--premium-gold)]/18"
                 >
                   Cambiar horario
                 </Link>

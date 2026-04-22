@@ -1,6 +1,6 @@
 "use client";
 
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight, Trash2 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 
 import type { TreatmentCategory } from "@/lib/treatments/catalog";
@@ -34,6 +34,17 @@ export type BookingPickerProps = {
   bookingFocusRef?: React.RefObject<HTMLDivElement | null>;
   treatmentFirstHintVisible: boolean;
   onTreatmentFirstHintVisible: (visible: boolean) => void;
+  selectedCountLabel?: string;
+  selectedDurationLabel?: string;
+  summaryTitle?: string;
+  monthAvailabilityServiceIds?: string[];
+  multiSelect?: boolean;
+  selectedTreatmentIds?: string[];
+  onToggleTreatmentId?: (id: string) => void;
+  onClearTreatmentIds?: () => void;
+  comboHintText?: string;
+  comboDurationLabel?: string;
+  comboAlertText?: string | null;
 };
 
 export function BookingPicker({
@@ -49,6 +60,17 @@ export function BookingPicker({
   bookingFocusRef,
   treatmentFirstHintVisible,
   onTreatmentFirstHintVisible,
+  selectedCountLabel,
+  selectedDurationLabel,
+  summaryTitle,
+  monthAvailabilityServiceIds = [],
+  multiSelect = false,
+  selectedTreatmentIds = [],
+  onToggleTreatmentId,
+  onClearTreatmentIds,
+  comboHintText,
+  comboDurationLabel,
+  comboAlertText,
 }: BookingPickerProps) {
   const [visibleMonthDate, setVisibleMonthDate] = useState(() => {
     const today = new Date();
@@ -77,7 +99,7 @@ export function BookingPicker({
   const visibleMonthLabel = `${salonMonthNames[visibleMonthDate.getMonth()]} ${visibleMonthDate.getFullYear()}`;
 
   useEffect(() => {
-    if (!selectedTreatmentId.trim()) {
+    if (!selectedTreatmentId.trim() && monthAvailabilityServiceIds.length === 0) {
       setMonthAvailability(undefined);
       return;
     }
@@ -92,6 +114,9 @@ export function BookingPicker({
       treatmentId: selectedTreatmentId,
       scope: bookingContext === "panel" ? "panel" : "public",
     });
+    if (monthAvailabilityServiceIds.length > 0) {
+      q.set("serviceIds", monthAvailabilityServiceIds.join(","));
+    }
     fetch(`/api/booking/month-availability?${q.toString()}`, {
       credentials: "same-origin",
       signal: ac.signal,
@@ -112,7 +137,7 @@ export function BookingPicker({
       cancelled = true;
       ac.abort();
     };
-  }, [selectedTreatmentId, visibleMonthDate, bookingContext]);
+  }, [selectedTreatmentId, visibleMonthDate, bookingContext, monthAvailabilityServiceIds]);
 
   useEffect(() => {
     if (!selectedDate || !selectedTreatmentId.trim()) return;
@@ -156,6 +181,10 @@ export function BookingPicker({
 
   const selectTreatment = (treatmentId: string) => {
     onTreatmentIdChange(treatmentId);
+    if (multiSelect && onToggleTreatmentId) {
+      onToggleTreatmentId(treatmentId);
+      return;
+    }
     closeTreatmentModal();
   };
 
@@ -174,13 +203,22 @@ export function BookingPicker({
           <div>
             <p className="text-[11px] tracking-[0.14em] text-[var(--soft-gray)]/55">Paso 1</p>
             <p className="mt-1 text-[14px] text-[var(--soft-gray)]">
-              {selectedTreatment ? selectedTreatment.name : "Elegí servicio"}
+              {summaryTitle ?? (selectedTreatment ? selectedTreatment.name : "Elegí servicio")}
             </p>
-            {selectedTreatment && (
+            {selectedCountLabel ? (
+              <p className="mt-1 text-[11px] text-[var(--soft-gray)]/55">{selectedCountLabel}</p>
+            ) : selectedTreatment ? (
               <p className="mt-1 text-[11px] text-[var(--soft-gray)]/55">
                 {selectedTreatment.category} · {selectedTreatment.subtitle}
               </p>
-            )}
+            ) : null}
+            {selectedDurationLabel ? (
+              <div className="mt-2 inline-flex items-center rounded-full border border-[var(--premium-gold)]/55 bg-[var(--premium-gold)]/12 px-2.5 py-1">
+                <span className="text-[11px] font-semibold tracking-[0.02em] text-[var(--premium-gold)]">
+                  {selectedDurationLabel}
+                </span>
+              </div>
+            ) : null}
             {activeStep === 1 && (
               <div className="mt-2 flex items-center gap-2 text-[11px] text-[var(--premium-gold)]/92">
                 <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-[var(--premium-gold)]" />
@@ -456,11 +494,49 @@ export function BookingPicker({
                 Cerrar
               </button>
             </div>
-
+            {multiSelect ? (
+              <div className="mb-3 rounded-xl border border-white/10 bg-[#1b1b1b] px-3 py-2">
+                <div className="flex items-start justify-between gap-2">
+                  <p className="min-w-0 flex-1 text-[12px] leading-snug text-[var(--soft-gray)]/82">
+                    <span className="font-medium text-[var(--premium-gold)]">
+                      {selectedTreatmentIds.length}
+                    </span>{" "}
+                    seleccionados
+                    {comboDurationLabel ? (
+                      <span className="text-[var(--soft-gray)]/58">
+                        {" "}
+                        ·{" "}
+                        <span className="text-[13px] font-semibold text-[var(--premium-gold)]/95">
+                          {comboDurationLabel}
+                        </span>
+                      </span>
+                    ) : null}
+                    {summaryTitle ? <span className="text-[var(--soft-gray)]/58"> · {summaryTitle}</span> : null}
+                  </p>
+                  {selectedTreatmentIds.length > 0 && onClearTreatmentIds ? (
+                    <button
+                      type="button"
+                      onClick={onClearTreatmentIds}
+                      aria-label="Quitar todos los servicios seleccionados"
+                      className="shrink-0 cursor-pointer rounded-lg border border-red-400/35 bg-red-950/25 p-1.5 text-red-300/90 transition hover:bg-red-950/40"
+                    >
+                      <Trash2 className="h-3.5 w-3.5" strokeWidth={2} />
+                    </button>
+                  ) : null}
+                </div>
+              </div>
+            ) : null}
+            {multiSelect && comboAlertText ? (
+              <div className="mb-2 rounded-xl border border-amber-500/45 bg-amber-950/95 px-3 py-3 text-center text-[14px] text-amber-100 shadow-[0_14px_34px_rgba(0,0,0,0.48)]">
+                {comboAlertText}
+              </div>
+            ) : null}
             {activeTreatmentCategory ? (
               <div className="max-h-[52vh] space-y-2 overflow-y-auto pb-2">
                 {visibleTreatments.map((treatment) => {
-                  const isSelected = treatment.id === selectedTreatmentId;
+                  const isSelected = multiSelect
+                    ? selectedTreatmentIds.includes(treatment.id)
+                    : treatment.id === selectedTreatmentId;
 
                   return (
                     <button
@@ -501,6 +577,27 @@ export function BookingPicker({
                 ))}
               </div>
             )}
+            {multiSelect ? (
+              <div className="mt-4">
+                <button
+                  type="button"
+                  disabled={selectedTreatmentIds.length === 0}
+                  onClick={closeTreatmentModal}
+                  className={`h-11 w-full rounded-xl text-[14px] font-semibold transition ${
+                    selectedTreatmentIds.length > 0
+                      ? "cursor-pointer bg-[var(--premium-gold)] text-black shadow-[0_8px_22px_rgba(206,120,50,0.28)]"
+                      : "cursor-not-allowed bg-[#2a2a2a] text-white/40"
+                  }`}
+                >
+                  Continuar ({selectedTreatmentIds.length})
+                </button>
+                {selectedTreatmentIds.length > 0 ? (
+                  <p className="mt-1.5 text-center text-[11px] text-[var(--soft-gray)]/55">
+                    Cuando termines de elegir, tocá Continuar.
+                  </p>
+                ) : null}
+              </div>
+            ) : null}
           </div>
         </div>
       )}

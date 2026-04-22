@@ -1,5 +1,6 @@
 import { BrandLogo } from "@/components/brand-logo";
-import { CalendarDays, CalendarPlus2, Home as HomeIcon, Percent, Sparkles, User } from "lucide-react";
+import { ConfirmadoIrPerfilButton } from "@/components/confirmado-ir-perfil-button";
+import { CalendarDays, Home as HomeIcon, Percent, Sparkles, User } from "lucide-react";
 import Link from "next/link";
 
 type ConfirmPageProps = {
@@ -68,48 +69,9 @@ export default async function TurnoConfirmadoPage({ searchParams }: ConfirmPageP
               </div>
             </div>
 
-            <div className="mt-4 grid grid-cols-3 gap-2 text-center text-[13px]">
-              <div className="rounded-xl border border-white/8 bg-[#1d1d1d] px-2 py-3">
-                <p className="text-[var(--soft-gray)]/72">3 Sesiones</p>
-              </div>
-              <div className="rounded-xl border border-white/8 bg-[#1d1d1d] px-2 py-3">
-                <p className="text-[var(--soft-gray)]/72">10% OFF</p>
-              </div>
-              <div className="rounded-xl border border-white/8 bg-[#1d1d1d] px-2 py-3">
-                <p className="font-medium text-[var(--soft-gray)]">$33.000</p>
-              </div>
-            </div>
           </div>
 
-          <button
-            type="button"
-            className="mt-6 flex h-[52px] w-full items-center justify-center gap-2 rounded-full bg-gradient-to-r from-[var(--accent-orange)] to-[var(--premium-gold)] text-[19px] font-heading text-white"
-          >
-            <CalendarPlus2 className="h-5 w-5" strokeWidth={1.9} />
-            Agregar al calendario
-          </button>
-
-          <div className="mt-5 grid grid-cols-1 gap-2">
-<button
-              type="button"
-              className="flex h-12 items-center justify-center rounded-2xl border border-white/8 bg-black/18 text-[14px] text-[var(--soft-gray)]"
-            >
-              Reprogramar turno
-            </button>
-            <button
-              type="button"
-              className="flex h-12 items-center justify-center rounded-2xl border border-white/8 bg-black/18 text-[14px] text-[var(--soft-gray)]"
-            >
-              Cancelar turno
-            </button>
-          </div>
-
-          <Link
-            href="/turnos"
-            className="mt-4 block text-center text-[13px] text-[var(--premium-gold)]/90"
-          >
-            Volver a la agenda
-          </Link>
+          <ConfirmadoIrPerfilButton phone={clientPhone} />
         </section>
       </main>
 

@@ -86,6 +86,7 @@ export function ReprogramarTurnoClient({
   const [calendarMonth, setCalendarMonth] = useState(() => new Date().getMonth() + 1);
   const [dayPickerOpen, setDayPickerOpen] = useState(false);
   const dayPickerRef = useRef<HTMLDivElement>(null);
+  const confirmButtonRef = useRef<HTMLButtonElement>(null);
 
   const backHref = variant === "panel" ? "/panel-turnos" : "/perfil/mis-turnos";
   const minDateKey = useMemo(() => {
@@ -179,6 +180,19 @@ export function ReprogramarTurnoClient({
     setTimeLocal("");
     setSaveError(null);
   }, [dateKey]);
+
+  useEffect(() => {
+    if (!timeLocal) return;
+    const id = window.setTimeout(() => {
+      confirmButtonRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+      const fullPageBottom = Math.max(
+        document.body.scrollHeight,
+        document.documentElement.scrollHeight,
+      );
+      window.scrollTo({ top: fullPageBottom, behavior: "smooth" });
+    }, 60);
+    return () => window.clearTimeout(id);
+  }, [timeLocal]);
 
   useEffect(() => {
     if (!reservation) return;
@@ -555,6 +569,7 @@ export function ReprogramarTurnoClient({
           ) : null}
 
           <button
+            ref={confirmButtonRef}
             type="button"
             disabled={saving || !timeLocal}
             onClick={() => void handleSave()}

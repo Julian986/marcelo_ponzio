@@ -15,6 +15,15 @@ export type ReservationStatus =
 export type PaymentStatus = "not_required" | "pending" | "simulated_paid" | "approved" | "failed" | "refunded";
 
 export type ReservationSource = "app_turnos" | "panel";
+export type ReservationBookingMode = "single" | "combo";
+
+export type ReservationServiceItem = {
+  treatmentId: string;
+  treatmentName: string;
+  subtitle: string;
+  category: TreatmentCategory;
+  durationMinutes: number;
+};
 
 export type ReservationDoc = {
   _id: ObjectId;
@@ -28,6 +37,12 @@ export type ReservationDoc = {
   startsAt: Date;
   /** Duración del servicio en minutos (catálogo al crear; ausente en reservas viejas). */
   durationMinutes?: number;
+  /** En combos, snapshot de servicios incluidos al momento de reservar. */
+  serviceItems?: ReservationServiceItem[];
+  /** Duración total del bloque reservado (incluye combos). */
+  totalDurationMinutes?: number;
+  /** Modo de reserva: servicio único o combo. */
+  bookingMode?: ReservationBookingMode;
   customerName: string;
   customerPhone: string;
   /** Solo dígitos; índice para “mis turnos”. Opcional en documentos viejos hasta backfill. */
@@ -69,6 +84,8 @@ export type CreateReservationInput = {
   customerName: string;
   customerPhone: string;
   whatsappOptIn: boolean;
+  /** Combo de servicios (v1: 1 a 3). Si no viene, usa `treatmentId` simple. */
+  serviceIds?: string[];
 };
 
 /** Auditoría de notificaciones Mercado Pago (webhook / IPN). */
