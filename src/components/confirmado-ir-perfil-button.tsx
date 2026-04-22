@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 
+import { event as gaEvent, GA_EVENT_CUSTOMER_SESSION_START } from "@/lib/gtag";
+
 type Props = {
   phone: string;
 };
@@ -15,12 +17,15 @@ export function ConfirmadoIrPerfilButton({ phone }: Props) {
     try {
       const p = phone.trim();
       if (p) {
-        await fetch("/api/me/session", {
+        const res = await fetch("/api/me/session", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           credentials: "same-origin",
-          body: JSON.stringify({ phone: p }),
+          body: JSON.stringify({ phone: p, source: "confirmado" }),
         });
+        if (res.ok) {
+          gaEvent(GA_EVENT_CUSTOMER_SESSION_START, { login_source: "confirmado" });
+        }
       }
     } catch {
       // Si falla el guardado de sesión, igual llevamos al perfil.

@@ -3,7 +3,9 @@ import { NextResponse } from "next/server";
 
 import { isLikelyWhatsappNumber } from "@/lib/booking/salon-availability";
 import { canonicalPhoneDigitsAR } from "@/lib/customer/phone-canonical-ar";
+import { logCustomerSessionStart, normalizeSessionEventSource } from "@/lib/customer/session-analytics";
 import { CUSTOMER_PROFILE_COOKIE, mintCustomerProfileToken } from "@/lib/customer/customer-session";
+import { getDb } from "@/lib/mongodb";
 
 export const dynamic = "force-dynamic";
 
@@ -41,6 +43,9 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "JSON inválido." }, { status: 400 });
   }
   const phone = typeof body === "object" && body && "phone" in body ? String((body as { phone?: unknown }).phone) : "";
+  const source = normalizeSessionEventSource(
+    typeof body === "object" && body && "source" in body ? (body as { source?: unknown }).source : undefined,
+  );
   if (!isLikelyWhatsappNumber(phone)) {
     return NextResponse.json({ error: "Ingresá un número de WhatsApp válido (10 a 15 dígitos)." }, { status: 400 });
   }
@@ -58,6 +63,17 @@ export async function POST(request: Request) {
     path: "/",
     maxAge: 60 * 24 * 60 * 60,
   });
+
+  try {
+    const db = await getDb();
+    await logCustomerSessionStart(db, {
+      phoneDigits: digits,
+      userAgent: request.headers.get("user-agent"),
+      source,
+    });
+  } catch (e) {
+    console.error("[api/me/session] analytics", e);
+  }
 
   return NextResponse.json({ ok: true as const });
 }

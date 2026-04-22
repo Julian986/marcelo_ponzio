@@ -1,6 +1,7 @@
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 
+import { logCustomerDailyActive, normalizeActivitySource } from "@/lib/customer/session-analytics";
 import { canonicalPhoneDigitsAR } from "@/lib/customer/phone-canonical-ar";
 import { CUSTOMER_PROFILE_COOKIE, readCustomerProfilePhoneDigits } from "@/lib/customer/customer-session";
 import { getDb } from "@/lib/mongodb";
@@ -10,7 +11,7 @@ import { serializeReservationForCustomer } from "@/lib/reservations/customer-pub
 
 export const dynamic = "force-dynamic";
 
-export async function GET() {
+export async function GET(request: Request) {
   const cookieStore = await cookies();
   const raw = cookieStore.get(CUSTOMER_PROFILE_COOKIE)?.value;
   const fromCookie = readCustomerProfilePhoneDigits(raw);
@@ -25,6 +26,8 @@ export async function GET() {
   try {
     const db = await getDb();
     await ensureReservationIndexes(db);
+    const source = normalizeActivitySource(new URL(request.url).searchParams.get("source"));
+    await logCustomerDailyActive(db, { phoneDigits: digits, source });
     const list = await listReservationsByCustomerPhoneDigits(db, digits);
     return NextResponse.json({
       reservations: list.map(serializeReservationForCustomer),

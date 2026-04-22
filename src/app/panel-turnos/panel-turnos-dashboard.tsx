@@ -39,6 +39,8 @@ export type PanelReservation = {
   customerPhone: string;
   reservationStatus: string;
   paymentStatus: string;
+  /** Quién canceló (solo si `reservationStatus` es cancelled). */
+  cancelledBy?: "panel" | "customer" | null;
   source?: string;
   startsAt: string;
   createdAt: string;
@@ -114,11 +116,30 @@ function ServiceIcon({ category }: { category: string }) {
   return <Hand className={cls} strokeWidth={1.85} />;
 }
 
-function StatusBadge({ reservationStatus, paymentStatus }: { reservationStatus: string; paymentStatus: string }) {
+function StatusBadge({
+  reservationStatus,
+  paymentStatus,
+  cancelledBy,
+}: {
+  reservationStatus: string;
+  paymentStatus: string;
+  cancelledBy?: "panel" | "customer" | null;
+}) {
   if (reservationStatus === "cancelled") {
+    const detail =
+      cancelledBy === "panel"
+        ? "Desde el panel"
+        : cancelledBy === "customer"
+          ? "Desde la web (cliente)"
+          : null;
     return (
-      <span className="inline-block rounded-full bg-red-500/12 px-2.5 py-1 text-[11px] font-semibold tracking-wide text-red-300/95">
-        Cancelada
+      <span className="inline-flex max-w-full flex-col gap-0.5">
+        <span className="inline-block w-fit rounded-full bg-red-500/12 px-2.5 py-1 text-[11px] font-semibold tracking-wide text-red-300/95">
+          Cancelada
+        </span>
+        {detail ? (
+          <span className="text-[10px] font-medium leading-tight text-red-200/75">{detail}</span>
+        ) : null}
       </span>
     );
   }
@@ -505,7 +526,11 @@ export function PanelTurnosDashboard() {
                             <span className="truncate">{r.customerName || "Cliente"}</span>
                           </p>
                           <div className="mt-2 flex flex-wrap items-center gap-2">
-                            <StatusBadge reservationStatus={r.reservationStatus} paymentStatus={r.paymentStatus} />
+                            <StatusBadge
+                              reservationStatus={r.reservationStatus}
+                              paymentStatus={r.paymentStatus}
+                              cancelledBy={r.cancelledBy ?? null}
+                            />
                             {r.source === "panel" ? (
                               <span className="inline-block rounded-full bg-sky-500/14 px-2.5 py-1 text-[11px] font-semibold tracking-wide text-sky-200/95">
                                 Manual

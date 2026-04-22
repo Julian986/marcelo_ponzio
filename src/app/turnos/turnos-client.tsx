@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { CalendarDays, ChevronLeft, Home as HomeIcon, Percent, Sparkles, User } from "lucide-react";
 import Link from "next/link";
@@ -90,9 +90,9 @@ export default function TurnosClient({ initialTreatment = "" }: TurnosClientProp
     if (total <= 0) return "";
     const h = Math.floor(total / 60);
     const m = total % 60;
-    if (h > 0 && m > 0) return `Duración ${h} h ${m} min`;
-    if (h > 0) return `Duración ${h} h`;
-    return `Duración ${m} min`;
+    if (h > 0 && m > 0) return `DuraciÃ³n ${h} h ${m} min`;
+    if (h > 0) return `DuraciÃ³n ${h} h`;
+    return `DuraciÃ³n ${m} min`;
   }, [totalSelectedDurationMinutes]);
   const primaryService = selectedServices[0];
 
@@ -170,7 +170,7 @@ export default function TurnosClient({ initialTreatment = "" }: TurnosClientProp
 
     const run = async (attempt: number) => {
       try {
-        const res = await fetch("/api/me/reservations", {
+        const res = await fetch("/api/me/reservations?source=turnos", {
           credentials: "same-origin",
           cache: "no-store",
         });
@@ -332,7 +332,7 @@ export default function TurnosClient({ initialTreatment = "" }: TurnosClientProp
         return;
       }
       if (!dataPending.id) {
-        setConfirmError("Respuesta inválida del servidor.");
+        setConfirmError("Respuesta invÃ¡lida del servidor.");
         return;
       }
 
@@ -357,7 +357,7 @@ export default function TurnosClient({ initialTreatment = "" }: TurnosClientProp
       }
 
       if (!dataPending.checkoutToken) {
-        setConfirmError("Respuesta inválida del servidor.");
+        setConfirmError("Respuesta invÃ¡lida del servidor.");
         return;
       }
 
@@ -375,7 +375,7 @@ export default function TurnosClient({ initialTreatment = "" }: TurnosClientProp
         return;
       }
       if (!dataPref.initPoint) {
-        setConfirmError("Mercado Pago no devolvió el enlace de pago.");
+        setConfirmError("Mercado Pago no devolviÃ³ el enlace de pago.");
         return;
       }
 
@@ -397,7 +397,7 @@ export default function TurnosClient({ initialTreatment = "" }: TurnosClientProp
       });
       window.location.href = dataPref.initPoint;
     } catch {
-      setConfirmError("Sin conexión o error de red. Probá de nuevo.");
+      setConfirmError("Sin conexiÃ³n o error de red. ProbÃ¡ de nuevo.");
     } finally {
       setCheckoutLoading(false);
     }
@@ -452,24 +452,24 @@ export default function TurnosClient({ initialTreatment = "" }: TurnosClientProp
               if (prev.includes(id)) return prev.filter((x) => x !== id);
               if (id === "servicio-completo" && prev.length > 0) {
                 setServiceLimitHint(
-                  "No podés seleccionar Servicio completo porque ya elegiste otros servicios.",
+                  "No podÃ©s seleccionar Servicio completo porque ya elegiste otros servicios.",
                 );
                 return prev;
               }
               if (prev.includes("servicio-completo")) {
                 setServiceLimitHint(
-                  "No podés agregar otro servicio porque ya seleccionaste Servicio completo.",
+                  "No podÃ©s agregar otro servicio porque ya seleccionaste Servicio completo.",
                 );
                 return prev;
               }
               if (id !== "keratina" && prev.includes("keratina")) {
                 setServiceLimitHint(
-                  "No podés agregar servicios después de Keratina. Si querés combinar, Keratina debe quedar al final.",
+                  "No podÃ©s agregar servicios despuÃ©s de Keratina. Si querÃ©s combinar, Keratina debe quedar al final.",
                 );
                 return prev;
               }
               if (prev.length >= 4) {
-                setServiceLimitHint("Máximo 4 servicios por turno.");
+                setServiceLimitHint("MÃ¡ximo 4 servicios por turno.");
                 return prev;
               }
               return [...prev, id];
@@ -481,7 +481,7 @@ export default function TurnosClient({ initialTreatment = "" }: TurnosClientProp
             setSelectedTreatmentId("");
             setSelectedTime("");
           }}
-          comboHintText="Podés elegir hasta 4 servicios. Servicio completo va solo y Keratina debe quedar al final."
+          comboHintText="PodÃ©s elegir hasta 4 servicios. Servicio completo va solo y Keratina debe quedar al final."
           comboDurationLabel={totalSelectedDurationLabel}
           comboAlertText={serviceLimitHint}
         />
@@ -501,7 +501,7 @@ export default function TurnosClient({ initialTreatment = "" }: TurnosClientProp
                     <p className="text-[11px] tracking-[0.14em] text-[var(--soft-gray)]/55">Paso 4</p>
                     <p className="mt-1 text-[18px] font-heading text-[var(--soft-gray)]">Tus datos</p>
                     <p className="mt-1 text-[12px] text-[var(--soft-gray)]/58">
-                      Completá tu nombre y WhatsApp para recordatorios.
+                      CompletÃ¡ tu nombre y WhatsApp para recordatorios.
                     </p>
                     {activeStep === 4 && (
                       <div className="mt-2 flex items-center gap-2 text-[11px] text-[var(--premium-gold)]/92">
@@ -522,7 +522,7 @@ export default function TurnosClient({ initialTreatment = "" }: TurnosClientProp
                       autoComplete="name"
                       value={customerName}
                       onChange={(e) => setCustomerName(e.target.value)}
-                      placeholder="Como figura en tu DNI o preferís que te llamemos"
+                      placeholder="Como figura en tu DNI o preferÃ­s que te llamemos"
                       className="mt-1.5 w-full rounded-xl border border-white/10 bg-[#141414] px-3 py-3 text-[15px] text-[var(--soft-gray)] outline-none placeholder:text-[var(--soft-gray)]/35 focus:border-[var(--premium-gold)]/55"
                     />
                   </div>
@@ -552,11 +552,11 @@ export default function TurnosClient({ initialTreatment = "" }: TurnosClientProp
                       }`}
                     />
                     <p className="mt-1 text-[11px] text-[var(--soft-gray)]/45">
-                      Mismo número que usás en WhatsApp.
+                      Mismo nÃºmero que usÃ¡s en WhatsApp.
                     </p>
                     {showWhatsappInvalidHint ? (
                       <p className="mt-1 text-[11px] leading-snug text-amber-200/90">
-                        Revisá el número: tiene que tener entre 10 y 15 dígitos en total (podés usar +54, espacios o
+                        RevisÃ¡ el nÃºmero: tiene que tener entre 10 y 15 dÃ­gitos en total (podÃ©s usar +54, espacios o
                         guiones).
                       </p>
                     ) : null}
@@ -590,17 +590,17 @@ export default function TurnosClient({ initialTreatment = "" }: TurnosClientProp
             >
               <p className="text-[11px] tracking-[0.14em] text-[var(--soft-gray)]/55">Paso 5</p>
               <p className="mt-1 text-[18px] font-heading text-[var(--soft-gray)]">
-                {requiresDeposit ? "Seña con Mercado Pago" : "Confirmar turno"}
+                {requiresDeposit ? "SeÃ±a con Mercado Pago" : "Confirmar turno"}
               </p>
               <p className="mt-1 text-[12px] text-[var(--soft-gray)]/58">
                 {requiresDeposit
-                  ? "Reservá el horario abonando la seña. Monto y política la define la clínica."
-                  : "Este servicio se reserva sin seña. Te enviamos recordatorio por WhatsApp antes del turno."}
+                  ? "ReservÃ¡ el horario abonando la seÃ±a. Monto y polÃ­tica la define la clÃ­nica."
+                  : "Este servicio se reserva sin seÃ±a. Te enviamos recordatorio por WhatsApp antes del turno."}
               </p>
               {activeStep === 5 && datosComplete && requiresDeposit && (
                 <div className="mt-2 flex items-center gap-2 text-[11px] text-[var(--premium-gold)]/92">
                   <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-[var(--premium-gold)]" />
-                  <span>Pagá la seña: te llevamos a Mercado Pago</span>
+                  <span>PagÃ¡ la seÃ±a: te llevamos a Mercado Pago</span>
                 </div>
               )}
               {requiresDeposit ? (
@@ -609,7 +609,7 @@ export default function TurnosClient({ initialTreatment = "" }: TurnosClientProp
                 </p>
               ) : (
                 <p className="mt-3 text-[11px] leading-snug text-[var(--soft-gray)]/50">
-                  Al confirmar, el turno queda agendado. Podés cambiar fecha u horario arriba si necesitás otro
+                  Al confirmar, el turno queda agendado. PodÃ©s cambiar fecha u horario arriba si necesitÃ¡s otro
                   servicio.
                 </p>
               )}
@@ -641,10 +641,10 @@ export default function TurnosClient({ initialTreatment = "" }: TurnosClientProp
                   <span className="text-[13px] font-medium opacity-95">
                     {checkoutLoading
                       ? requiresDeposit
-                        ? "Preparando pago…"
-                        : "Confirmando…"
+                        ? "Preparando pagoâ€¦"
+                        : "Confirmandoâ€¦"
                       : requiresDeposit
-                        ? "Pagar seña con Mercado Pago"
+                        ? "Pagar seÃ±a con Mercado Pago"
                         : "Confirmar reserva"}
                   </span>
                 </button>
@@ -689,3 +689,4 @@ export default function TurnosClient({ initialTreatment = "" }: TurnosClientProp
     </div>
   );
 }
+

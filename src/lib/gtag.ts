@@ -5,6 +5,9 @@
 
 export const GA_MEASUREMENT_ID = process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID ?? "";
 
+/** Inicio de sesión de cliente (WhatsApp) — mismo nombre que métricas server-side. */
+export const GA_EVENT_CUSTOMER_SESSION_START = "customer_session_start";
+
 declare global {
   interface Window {
     dataLayer?: unknown[];

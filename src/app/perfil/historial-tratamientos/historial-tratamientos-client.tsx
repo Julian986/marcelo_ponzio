@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { ChevronLeft } from "lucide-react";
 import Link from "next/link";
@@ -16,10 +16,10 @@ export function HistorialTratamientosClient() {
   const load = useCallback(async () => {
     setError(null);
     try {
-      const res = await fetch("/api/me/reservations", { credentials: "same-origin" });
+      const res = await fetch("/api/me/reservations?source=mis_turnos", { credentials: "same-origin" });
       if (res.status === 401) {
         setRows([]);
-        setError("Iniciá sesión desde Perfil con tu WhatsApp.");
+        setError("IniciÃ¡ sesiÃ³n desde Perfil con tu WhatsApp.");
         return;
       }
       const data = (await res.json()) as { reservations?: CustomerReservationPublic[]; error?: string };
@@ -30,7 +30,7 @@ export function HistorialTratamientosClient() {
       }
       setRows(Array.isArray(data.reservations) ? data.reservations : []);
     } catch {
-      setError("Sin conexión.");
+      setError("Sin conexiÃ³n.");
       setRows([]);
     }
   }, []);
@@ -73,7 +73,7 @@ export function HistorialTratamientosClient() {
         </Link>
         <div>
           <h1 className="font-heading text-[22px] leading-tight text-[var(--premium-gold)]">Historial</h1>
-          <p className="mt-0.5 text-[12px] text-[var(--soft-gray)]/55">Tratamientos · sesiones realizadas</p>
+          <p className="mt-0.5 text-[12px] text-[var(--soft-gray)]/55">Tratamientos Â· sesiones realizadas</p>
         </div>
       </header>
 
@@ -87,15 +87,15 @@ export function HistorialTratamientosClient() {
       ) : null}
 
       <p className="mb-4 text-[12px] leading-snug text-[var(--soft-gray)]/58">
-        Contamos como sesión realizada los turnos ya pasados (fecha y hora) o marcados como realizados; no incluimos
+        Contamos como sesiÃ³n realizada los turnos ya pasados (fecha y hora) o marcados como realizados; no incluimos
         cancelados ni inasistencias.
       </p>
 
       {rows === null ? (
-        <p className="py-10 text-center text-[14px] text-[var(--soft-gray)]/55">Cargando…</p>
+        <p className="py-10 text-center text-[14px] text-[var(--soft-gray)]/55">Cargandoâ€¦</p>
       ) : groups.length === 0 ? (
         <p className="py-10 text-center text-[14px] text-[var(--soft-gray)]/55">
-          Todavía no hay sesiones pasadas registradas con tu WhatsApp.
+          TodavÃ­a no hay sesiones pasadas registradas con tu WhatsApp.
         </p>
       ) : (
         <ul className="space-y-3">
@@ -107,9 +107,9 @@ export function HistorialTratamientosClient() {
               <p className="text-[16px] font-semibold text-[var(--soft-gray)]">{g.treatmentName}</p>
               <p className="mt-2 text-[13px] text-[var(--soft-gray)]/72">
                 <span className="font-semibold text-[var(--premium-gold)]">{g.sessions}</span>{" "}
-                {g.sessions === 1 ? "sesión realizada" : "sesiones realizadas"}
+                {g.sessions === 1 ? "sesiÃ³n realizada" : "sesiones realizadas"}
               </p>
-              <p className="mt-1 text-[11px] text-[var(--soft-gray)]/48">Última: {formatShortDateFromKey(g.lastDateKey)}</p>
+              <p className="mt-1 text-[11px] text-[var(--soft-gray)]/48">Ãšltima: {formatShortDateFromKey(g.lastDateKey)}</p>
             </li>
           ))}
         </ul>
@@ -117,3 +117,4 @@ export function HistorialTratamientosClient() {
     </main>
   );
 }
+
