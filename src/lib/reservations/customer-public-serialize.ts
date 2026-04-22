@@ -3,6 +3,7 @@ import type { ReservationDoc, ReservationSource, ReservationStatus } from "./typ
 export type CustomerReservationPublic = {
   id: string;
   customerName: string;
+  customerPhone: string;
   treatmentId: string;
   treatmentName: string;
   subtitle: string;
@@ -15,6 +16,7 @@ export type CustomerReservationPublic = {
   reservationStatus: ReservationStatus;
   paymentStatus: string;
   source: ReservationSource;
+  cancelledBy?: "panel" | "customer" | null;
 };
 
 export function serializeReservationForCustomer(r: ReservationDoc): CustomerReservationPublic {
@@ -25,6 +27,7 @@ export function serializeReservationForCustomer(r: ReservationDoc): CustomerRese
   return {
     id: r._id.toHexString(),
     customerName: String(r.customerName ?? "").trim() || "Cliente",
+    customerPhone: String(r.customerPhone ?? "").trim(),
     treatmentId: String(r.treatmentId ?? "").trim(),
     treatmentName: r.treatmentName,
     subtitle: r.subtitle,
@@ -37,6 +40,7 @@ export function serializeReservationForCustomer(r: ReservationDoc): CustomerRese
     reservationStatus: r.reservationStatus,
     paymentStatus: r.paymentStatus,
     source: r.source ?? "app_turnos",
+    cancelledBy: r.cancelledBy ?? null,
   };
 }
 
@@ -48,6 +52,11 @@ export function reservationEndMs(r: Pick<CustomerReservationPublic, "startsAtIso
 
 /** Próximos: turno aún no terminó y no está cancelado / no_show. */
 export function isUpcomingReservation(r: CustomerReservationPublic, nowMs = Date.now()): boolean {
-  if (r.reservationStatus === "cancelled" || r.reservationStatus === "no_show") return false;
+  if (r.reservationStatus === "no_show") return false;
+  if (r.reservationStatus === "cancelled") {
+    // Si el salón lo canceló, mantenemos visible mientras la fecha no pase.
+    if (r.cancelledBy === "panel") return reservationEndMs(r) >= nowMs;
+    return false;
+  }
   return reservationEndMs(r) >= nowMs;
 }

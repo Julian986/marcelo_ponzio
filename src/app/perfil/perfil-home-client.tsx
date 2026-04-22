@@ -9,6 +9,7 @@ import { canonicalPhoneDigitsAR } from "@/lib/customer/phone-canonical-ar";
 import type { CustomerReservationPublic } from "@/lib/reservations/customer-public-serialize";
 
 type MeState = "unknown" | "guest" | "authed";
+const CUSTOMER_PROFILE_CACHE_KEY = "mp_customer_profile_cache";
 
 function pickWelcomeName(rows: CustomerReservationPublic[]): string | null {
   const sorted = [...rows].sort((a, b) => b.startsAtIso.localeCompare(a.startsAtIso));
@@ -44,7 +45,20 @@ export function PerfilHomeClient() {
       const data = (await res.json()) as { reservations?: CustomerReservationPublic[] };
       const list = Array.isArray(data.reservations) ? data.reservations : [];
       setMe("authed");
-      setWelcomeName(pickWelcomeName(list));
+      const name = pickWelcomeName(list);
+      setWelcomeName(name);
+      try {
+        const latest = [...list].sort((a, b) => b.startsAtIso.localeCompare(a.startsAtIso))[0];
+        localStorage.setItem(
+          CUSTOMER_PROFILE_CACHE_KEY,
+          JSON.stringify({
+            name: name ?? "",
+            phone: latest?.customerPhone ?? "",
+          }),
+        );
+      } catch {
+        // ignore localStorage failures
+      }
     } catch {
       setMe("guest");
       setWelcomeName(null);
@@ -93,6 +107,11 @@ export function PerfilHomeClient() {
       setMe("guest");
       setPhoneHint(null);
       setWelcomeName(null);
+      try {
+        localStorage.removeItem(CUSTOMER_PROFILE_CACHE_KEY);
+      } catch {
+        // ignore localStorage failures
+      }
     } finally {
       setBusy(false);
     }

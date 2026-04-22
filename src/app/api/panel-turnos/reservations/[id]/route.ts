@@ -4,7 +4,7 @@ import { NextResponse } from "next/server";
 import { getDb } from "@/lib/mongodb";
 import { verifyPanelCookie } from "@/lib/panel-turnos-auth";
 import type { ReservationDoc } from "@/lib/reservations/types";
-import { findReservationByHexId, rescheduleReservation, ensureReservationIndexes } from "@/lib/reservations/service";
+import { cancelReservation, ensureReservationIndexes, findReservationByHexId, rescheduleReservation } from "@/lib/reservations/service";
 
 export const dynamic = "force-dynamic";
 
@@ -15,6 +15,18 @@ function statusFromRescheduleCode(code: string | undefined): number {
     case "NOT_MOVABLE":
     case "SLOT_UNAVAILABLE":
     case "SLOT_OVERLAP":
+    case "CONFLICT":
+      return 409;
+    default:
+      return 400;
+  }
+}
+
+function statusFromCancelCode(code: string | undefined): number {
+  switch (code) {
+    case "NOT_FOUND":
+      return 404;
+    case "NOT_CANCELLABLE":
     case "CONFLICT":
       return 409;
     default:
@@ -99,5 +111,44 @@ export async function PATCH(request: Request, context: { params: Promise<{ id: s
   } catch (e) {
     console.error("[api/panel-turnos/reservations/[id] PATCH]", e);
     return NextResponse.json({ error: "No se pudo actualizar el turno." }, { status: 500 });
+  }
+}
+
+export async function DELETE(request: Request, context: { params: Promise<{ id: string }> }) {
+  const cookieStore = await cookies();
+  if (!verifyPanelCookie(cookieStore.get("panel_turnos_auth")?.value)) {
+    return NextResponse.json({ error: "No autorizado." }, { status: 401 });
+  }
+
+  const { id } = await context.params;
+  const hex = id.trim();
+
+  let body: unknown = null;
+  try {
+    body = await request.json();
+  } catch {
+    body = null;
+  }
+  const cancelReason =
+    typeof body === "object" && body && "cancelReason" in body
+      ? String((body as { cancelReason: unknown }).cancelReason ?? "").trim()
+      : "";
+
+  try {
+    const db = await getDb();
+    await ensureReservationIndexes(db);
+    const result = await cancelReservation(db, {
+      reservationHexId: hex,
+      now: new Date(),
+      actor: "panel",
+      cancelReason: cancelReason || undefined,
+    });
+    if ("error" in result) {
+      return NextResponse.json({ error: result.error, code: result.code }, { status: statusFromCancelCode(result.code) });
+    }
+    return NextResponse.json({ ok: true });
+  } catch (e) {
+    console.error("[api/panel-turnos/reservations/[id] DELETE]", e);
+    return NextResponse.json({ error: "No se pudo cancelar el turno." }, { status: 500 });
   }
 }

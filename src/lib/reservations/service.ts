@@ -475,6 +475,7 @@ export async function findReservationByHexId(db: Db, hexId: string): Promise<Res
 }
 
 const RESCHEDULEABLE_STATUSES: ReservationStatus[] = ["confirmed", "pending_payment"];
+const CANCELLABLE_STATUSES: ReservationStatus[] = ["confirmed", "pending_payment"];
 
 /**
  * Cambia día/hora de una reserva (mismo tratamiento y duración).
@@ -595,6 +596,61 @@ export async function rescheduleReservation(
     return { error: "No se pudo actualizar el turno. Probá de nuevo.", code: "CONFLICT" };
   }
 
+  return { ok: true as const };
+}
+
+/**
+ * Cancela una reserva activa.
+ * Cliente: solo su WhatsApp; panel: cualquier turno cancelable.
+ */
+export async function cancelReservation(
+  db: Db,
+  input: {
+    reservationHexId: string;
+    now: Date;
+    actor: "panel" | "customer";
+    customerCanonicalDigits?: string | null;
+    cancelReason?: string | null;
+  },
+): Promise<{ ok: true } | { error: string; code?: string }> {
+  await ensureReservationIndexes(db);
+  const hex = input.reservationHexId.trim();
+  const doc = await findReservationByHexId(db, hex);
+  if (!doc) {
+    return { error: "Turno no encontrado.", code: "NOT_FOUND" };
+  }
+  if (!CANCELLABLE_STATUSES.includes(doc.reservationStatus)) {
+    return { error: "Este turno no se puede cancelar.", code: "NOT_CANCELLABLE" };
+  }
+
+  if (input.actor === "customer") {
+    const canon = input.customerCanonicalDigits?.trim();
+    if (!canon) {
+      return { error: "Tenés que iniciar sesión en tu perfil.", code: "UNAUTHORIZED" };
+    }
+    if (canonicalPhoneDigitsAR(doc.customerPhone) !== canon) {
+      return { error: "No podés modificar un turno de otro cliente.", code: "FORBIDDEN" };
+    }
+  }
+
+  const updatedAt = input.now;
+  const reasonRaw = String(input.cancelReason ?? "").trim();
+  const reason = reasonRaw.length > 160 ? reasonRaw.slice(0, 160) : reasonRaw;
+  const result = await db.collection<ReservationDoc>(COLLECTION).updateOne(
+    { _id: doc._id, reservationStatus: doc.reservationStatus },
+    {
+      $set: {
+        reservationStatus: "cancelled",
+        cancelReason: reason || undefined,
+        cancelledBy: input.actor,
+        updatedAt,
+      },
+      $unset: { waReminder24hSentAt: "" },
+    },
+  );
+  if (result.modifiedCount !== 1) {
+    return { error: "No se pudo cancelar el turno. Probá de nuevo.", code: "CONFLICT" };
+  }
   return { ok: true as const };
 }
 

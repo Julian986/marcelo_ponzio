@@ -18,6 +18,15 @@ type TurnosClientProps = {
   initialTreatment?: string;
 };
 
+type MeReservationsResponse = {
+  reservations?: Array<{
+    customerName?: string;
+    customerPhone?: string;
+    startsAtIso?: string;
+  }>;
+};
+const CUSTOMER_PROFILE_CACHE_KEY = "mp_customer_profile_cache";
+
 export default function TurnosClient({ initialTreatment = "" }: TurnosClientProps) {
   const treatmentParam = (() => {
     try {
@@ -41,6 +50,8 @@ export default function TurnosClient({ initialTreatment = "" }: TurnosClientProp
   const [whatsappOptIn, setWhatsappOptIn] = useState(true);
   const [checkoutLoading, setCheckoutLoading] = useState(false);
   const [confirmError, setConfirmError] = useState<string | null>(null);
+  const [sessionStatus, setSessionStatus] = useState<"unknown" | "guest" | "authed">("unknown");
+  const [sessionDisplayName, setSessionDisplayName] = useState<string | null>(null);
   /** Horarios con solapes resueltos en servidor; `undefined` = no aplica, `null` = cargando. */
   const [remoteSlots, setRemoteSlots] = useState<string[] | null | undefined>(undefined);
   const bookingFocusRef = useRef<HTMLDivElement | null>(null);
@@ -48,6 +59,7 @@ export default function TurnosClient({ initialTreatment = "" }: TurnosClientProp
   const paymentSectionRef = useRef<HTMLElement | null>(null);
   const scrollPaymentTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const prevDatosCompleteRef = useRef(false);
+  const sessionBootstrappedRef = useRef(false);
 
   const selectedTreatment = useMemo(
     () => SALON_TREATMENT_OPTIONS.find((option) => option.id === selectedTreatmentId),
@@ -94,6 +106,7 @@ export default function TurnosClient({ initialTreatment = "" }: TurnosClientProp
   );
   const showWhatsappInvalidHint =
     customerPhone.trim().length >= 8 && !isLikelyWhatsappNumber(customerPhone);
+  const hasSessionProfile = sessionStatus === "authed" && customerName.trim().length >= 2 && isLikelyWhatsappNumber(customerPhone);
   const activeStep = selectedServices.length === 0
     ? 1
     : !selectedDate
@@ -103,6 +116,96 @@ export default function TurnosClient({ initialTreatment = "" }: TurnosClientProp
         : !datosComplete
           ? 4
           : 5;
+
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(CUSTOMER_PROFILE_CACHE_KEY);
+      if (!raw) return;
+      const cached = JSON.parse(raw) as { name?: string; phone?: string };
+      const cachedName = String(cached.name ?? "").trim();
+      const cachedPhone = String(cached.phone ?? "").trim();
+      if (cachedName) {
+        setSessionDisplayName(cachedName);
+        if (customerName.trim().length < 2) setCustomerName(cachedName);
+        setSessionStatus("authed");
+      }
+      if (cachedPhone && !isLikelyWhatsappNumber(customerPhone)) {
+        setCustomerPhone(cachedPhone);
+      }
+    } catch {
+      // ignore invalid local cache
+    }
+  }, []);
+
+  useEffect(() => {
+    if (sessionBootstrappedRef.current) return;
+    sessionBootstrappedRef.current = true;
+    let cancelled = false;
+    let retryTimer: number | null = null;
+    const applyProfileFromReservations = (rows: MeReservationsResponse["reservations"]) => {
+      const list = Array.isArray(rows) ? rows : [];
+      const latest = [...list]
+        .sort((a, b) => String(b.startsAtIso ?? "").localeCompare(String(a.startsAtIso ?? "")))[0];
+      if (latest?.customerName && customerName.trim().length < 2) {
+        setCustomerName(latest.customerName.trim());
+      }
+      if (latest?.customerPhone && !isLikelyWhatsappNumber(customerPhone)) {
+        setCustomerPhone(latest.customerPhone.trim());
+      }
+      const n = latest?.customerName?.trim();
+      setSessionDisplayName(n && n.length >= 2 ? n : null);
+      setSessionStatus("authed");
+      try {
+        localStorage.setItem(
+          CUSTOMER_PROFILE_CACHE_KEY,
+          JSON.stringify({
+            name: latest?.customerName?.trim() ?? "",
+            phone: latest?.customerPhone?.trim() ?? "",
+          }),
+        );
+      } catch {
+        // ignore localStorage failures
+      }
+    };
+
+    const run = async (attempt: number) => {
+      try {
+        const res = await fetch("/api/me/reservations", {
+          credentials: "same-origin",
+          cache: "no-store",
+        });
+        if (cancelled) return;
+        if (res.status === 401) {
+          if (attempt < 5) {
+            retryTimer = window.setTimeout(() => {
+              if (!cancelled) void run(attempt + 1);
+            }, 450);
+            return;
+          }
+          setSessionStatus("guest");
+          setSessionDisplayName(null);
+          return;
+        }
+        if (!res.ok) {
+          setSessionStatus("guest");
+          setSessionDisplayName(null);
+          return;
+        }
+        const data = (await res.json()) as MeReservationsResponse;
+        applyProfileFromReservations(data.reservations);
+      } catch {
+        if (!cancelled) setSessionStatus("guest");
+      }
+    };
+
+    (async () => {
+      await run(1);
+    })();
+    return () => {
+      cancelled = true;
+      if (retryTimer) window.clearTimeout(retryTimer);
+    };
+  }, []);
 
   useEffect(() => {
     if (selectedServices.length > 0) setTreatmentFirstHintVisible(false);
@@ -310,6 +413,11 @@ export default function TurnosClient({ initialTreatment = "" }: TurnosClientProp
           <h1 className="text-[30px] leading-none font-heading">Reservar turno</h1>
           <span className="h-5 w-5" />
         </header>
+        {sessionStatus === "authed" && sessionDisplayName ? (
+          <p className="mb-4 text-center text-[14px] text-[var(--soft-gray)]/85">
+            Hola, <span className="font-semibold text-[var(--premium-gold)]">{sessionDisplayName}</span>
+          </p>
+        ) : null}
 
         <BookingPicker
           selectedTreatmentId={selectedTreatmentId}
@@ -380,91 +488,97 @@ export default function TurnosClient({ initialTreatment = "" }: TurnosClientProp
 
         {hasSlot && (
           <div ref={dataSectionRef} className="mt-6 space-y-5">
-            <section
-              className={`rounded-2xl border bg-[#171717] px-4 py-4 transition-all ${
-                activeStep === 4
-                  ? "border-[var(--premium-gold)] shadow-[0_0_0_1px_rgba(228,202,105,0.22),0_0_22px_rgba(206,120,50,0.18)]"
-                  : "border-white/8"
-              }`}
-            >
-              <div className="mb-3 flex items-start justify-between gap-2">
-                <div>
-                  <p className="text-[11px] tracking-[0.14em] text-[var(--soft-gray)]/55">Paso 4</p>
-                  <p className="mt-1 text-[18px] font-heading text-[var(--soft-gray)]">Tus datos</p>
-                  <p className="mt-1 text-[12px] text-[var(--soft-gray)]/58">
-                    Completá tu nombre y WhatsApp para recordatorios.
-                  </p>
-                  {activeStep === 4 && (
-                    <div className="mt-2 flex items-center gap-2 text-[11px] text-[var(--premium-gold)]/92">
-                      <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-[var(--premium-gold)]" />
-                      <span>Necesitamos estos datos antes del pago</span>
-                    </div>
-                  )}
-                </div>
-              </div>
-              <div className="space-y-3">
-                <div>
-                  <label htmlFor="customerName" className="text-[11px] tracking-[0.12em] text-[var(--soft-gray)]/55">
-                    Nombre y apellido
-                  </label>
-                  <input
-                    id="customerName"
-                    name="customerName"
-                    autoComplete="name"
-                    value={customerName}
-                    onChange={(e) => setCustomerName(e.target.value)}
-                    placeholder="Como figura en tu DNI o preferís que te llamemos"
-                    className="mt-1.5 w-full rounded-xl border border-white/10 bg-[#141414] px-3 py-3 text-[15px] text-[var(--soft-gray)] outline-none placeholder:text-[var(--soft-gray)]/35 focus:border-[var(--premium-gold)]/55"
-                  />
-                </div>
-                <div>
-                  <label htmlFor="customerPhone" className="text-[11px] tracking-[0.12em] text-[var(--soft-gray)]/55">
-                    WhatsApp
-                  </label>
-                  <input
-                    id="customerPhone"
-                    name="customerPhone"
-                    type="tel"
-                    autoComplete="tel"
-                    inputMode="tel"
-                    value={customerPhone}
-                    onChange={(e) => setCustomerPhone(e.target.value)}
-                    onBlur={() => {
-                      const nameOk = customerName.trim().length >= 2;
-                      const phoneOk = isLikelyWhatsappNumber(customerPhone);
-                      if (hasSlot && nameOk && phoneOk && whatsappOptIn) {
-                        scheduleScrollToPaymentSection();
-                      }
-                    }}
-                    placeholder="Ej: +54 9 11 2345-6789"
-                    aria-invalid={showWhatsappInvalidHint}
-                    className={`mt-1.5 w-full rounded-xl border bg-[#141414] px-3 py-3 text-[15px] text-[var(--soft-gray)] outline-none placeholder:text-[var(--soft-gray)]/35 focus:border-[var(--premium-gold)]/55 ${
-                      showWhatsappInvalidHint ? "border-amber-500/45" : "border-white/10"
-                    }`}
-                  />
-                  <p className="mt-1 text-[11px] text-[var(--soft-gray)]/45">
-                    Mismo número que usás en WhatsApp.
-                  </p>
-                  {showWhatsappInvalidHint ? (
-                    <p className="mt-1 text-[11px] leading-snug text-amber-200/90">
-                      Revisá el número: tiene que tener entre 10 y 15 dígitos en total (podés usar +54, espacios o
-                      guiones).
+            {!hasSessionProfile ? (
+              <section
+                className={`rounded-2xl border bg-[#171717] px-4 py-4 transition-all ${
+                  activeStep === 4
+                    ? "border-[var(--premium-gold)] shadow-[0_0_0_1px_rgba(228,202,105,0.22),0_0_22px_rgba(206,120,50,0.18)]"
+                    : "border-white/8"
+                }`}
+              >
+                <div className="mb-3 flex items-start justify-between gap-2">
+                  <div>
+                    <p className="text-[11px] tracking-[0.14em] text-[var(--soft-gray)]/55">Paso 4</p>
+                    <p className="mt-1 text-[18px] font-heading text-[var(--soft-gray)]">Tus datos</p>
+                    <p className="mt-1 text-[12px] text-[var(--soft-gray)]/58">
+                      Completá tu nombre y WhatsApp para recordatorios.
                     </p>
-                  ) : null}
+                    {activeStep === 4 && (
+                      <div className="mt-2 flex items-center gap-2 text-[11px] text-[var(--premium-gold)]/92">
+                        <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-[var(--premium-gold)]" />
+                        <span>Necesitamos estos datos antes del pago</span>
+                      </div>
+                    )}
+                  </div>
                 </div>
-                <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-white/8 bg-black/20 px-3 py-3">
-                  <input
-                    type="checkbox"
-                    checked={whatsappOptIn}
-                    onChange={(e) => setWhatsappOptIn(e.target.checked)}
-                    className="mt-1 h-4 w-4 shrink-0 rounded border-white/20 accent-[var(--premium-gold)]"
-                  />
-                  <span className="text-[12px] leading-snug text-[var(--soft-gray)]/78">
-                    Acepto recibir recordatorios y avisos de mi turno por WhatsApp.
-                  </span>
-                </label>
-              </div>
-            </section>
+                <div className="space-y-3">
+                  <div>
+                    <label htmlFor="customerName" className="text-[11px] tracking-[0.12em] text-[var(--soft-gray)]/55">
+                      Nombre y apellido
+                    </label>
+                    <input
+                      id="customerName"
+                      name="customerName"
+                      autoComplete="name"
+                      value={customerName}
+                      onChange={(e) => setCustomerName(e.target.value)}
+                      placeholder="Como figura en tu DNI o preferís que te llamemos"
+                      className="mt-1.5 w-full rounded-xl border border-white/10 bg-[#141414] px-3 py-3 text-[15px] text-[var(--soft-gray)] outline-none placeholder:text-[var(--soft-gray)]/35 focus:border-[var(--premium-gold)]/55"
+                    />
+                  </div>
+                  <div>
+                    <label htmlFor="customerPhone" className="text-[11px] tracking-[0.12em] text-[var(--soft-gray)]/55">
+                      WhatsApp
+                    </label>
+                    <input
+                      id="customerPhone"
+                      name="customerPhone"
+                      type="tel"
+                      autoComplete="tel"
+                      inputMode="tel"
+                      value={customerPhone}
+                      onChange={(e) => setCustomerPhone(e.target.value)}
+                      onBlur={() => {
+                        const nameOk = customerName.trim().length >= 2;
+                        const phoneOk = isLikelyWhatsappNumber(customerPhone);
+                        if (hasSlot && nameOk && phoneOk && whatsappOptIn) {
+                          scheduleScrollToPaymentSection();
+                        }
+                      }}
+                      placeholder="Ej: +54 9 11 2345-6789"
+                      aria-invalid={showWhatsappInvalidHint}
+                      className={`mt-1.5 w-full rounded-xl border bg-[#141414] px-3 py-3 text-[15px] text-[var(--soft-gray)] outline-none placeholder:text-[var(--soft-gray)]/35 focus:border-[var(--premium-gold)]/55 ${
+                        showWhatsappInvalidHint ? "border-amber-500/45" : "border-white/10"
+                      }`}
+                    />
+                    <p className="mt-1 text-[11px] text-[var(--soft-gray)]/45">
+                      Mismo número que usás en WhatsApp.
+                    </p>
+                    {showWhatsappInvalidHint ? (
+                      <p className="mt-1 text-[11px] leading-snug text-amber-200/90">
+                        Revisá el número: tiene que tener entre 10 y 15 dígitos en total (podés usar +54, espacios o
+                        guiones).
+                      </p>
+                    ) : null}
+                  </div>
+                  <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-white/8 bg-black/20 px-3 py-3">
+                    <input
+                      type="checkbox"
+                      checked={whatsappOptIn}
+                      onChange={(e) => setWhatsappOptIn(e.target.checked)}
+                      className="mt-1 h-4 w-4 shrink-0 rounded border-white/20 accent-[var(--premium-gold)]"
+                    />
+                    <span className="text-[12px] leading-snug text-[var(--soft-gray)]/78">
+                      Acepto recibir recordatorios y avisos de mi turno por WhatsApp.
+                    </span>
+                  </label>
+                </div>
+              </section>
+            ) : (
+              <section className="rounded-2xl border border-emerald-500/25 bg-emerald-950/15 px-4 py-3 text-[13px] text-emerald-100/90">
+                Usaremos tus datos guardados para confirmar el turno.
+              </section>
+            )}
 
             <section
               ref={paymentSectionRef}

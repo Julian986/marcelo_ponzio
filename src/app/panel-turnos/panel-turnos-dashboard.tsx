@@ -11,6 +11,7 @@ import {
   Plus,
   Scissors,
   Sparkles,
+  Trash2,
   User,
 } from "lucide-react";
 import Link from "next/link";
@@ -152,6 +153,8 @@ export function PanelTurnosDashboard() {
   const [loading, setLoading] = useState(true);
   const [logoutBusy, setLogoutBusy] = useState(false);
   const [refreshTick, setRefreshTick] = useState(0);
+  const [cancellingReservationId, setCancellingReservationId] = useState<string | null>(null);
+  const [cancelConfirmReservationId, setCancelConfirmReservationId] = useState<string | null>(null);
 
   const grid = useMemo(() => buildPanelMonthGrid(year, month), [year, month]);
   const todayKey = todayYmd(now);
@@ -250,6 +253,20 @@ export function PanelTurnosDashboard() {
     });
     if (!res.ok) return;
     reloadMonth();
+  }
+
+  async function handleCancelReservation(reservationId: string) {
+    setCancellingReservationId(reservationId);
+    try {
+      const res = await fetch(`/api/panel-turnos/reservations/${encodeURIComponent(reservationId)}`, {
+        method: "DELETE",
+        credentials: "same-origin",
+      });
+      if (!res.ok) return;
+      reloadMonth();
+    } finally {
+      setCancellingReservationId(null);
+    }
   }
 
   async function handleLogout() {
@@ -457,8 +474,20 @@ export function PanelTurnosDashboard() {
               return (
                 <article
                   key={r.id}
-                  className="rounded-[20px] border border-white/8 bg-[#171717] px-4 py-4 shadow-[0_10px_32px_rgba(0,0,0,0.32)]"
+                  className="relative rounded-[20px] border border-white/8 bg-[#171717] px-4 py-4 shadow-[0_10px_32px_rgba(0,0,0,0.32)]"
                 >
+                  {r.reservationStatus === "confirmed" || r.reservationStatus === "pending_payment" ? (
+                    <button
+                      type="button"
+                      onClick={() => setCancelConfirmReservationId(r.id)}
+                      disabled={cancellingReservationId === r.id}
+                      aria-label="Cancelar turno"
+                      title="Cancelar turno"
+                      className="absolute top-3 right-3 inline-flex h-8 w-8 cursor-pointer items-center justify-center rounded-lg border border-red-400/35 bg-red-500/10 text-red-200/95 transition hover:bg-red-500/16 disabled:cursor-not-allowed disabled:opacity-60"
+                    >
+                      <Trash2 className="h-4 w-4" strokeWidth={1.9} />
+                    </button>
+                  ) : null}
                   <div className="flex gap-3">
                     <div className="w-[52px] shrink-0 text-left">
                       <p className="text-[15px] font-bold leading-none text-[var(--soft-gray)]">{r.timeLocal}</p>
@@ -466,7 +495,7 @@ export function PanelTurnosDashboard() {
                         {panelDurationLabel(r.treatmentName, r.category)}
                       </p>
                     </div>
-                    <div className="min-w-0 flex-1">
+                    <div className="min-w-0 flex-1 pr-10">
                       <div className="flex gap-2">
                         <ServiceIcon category={r.category} />
                         <div className="min-w-0 flex-1">
@@ -523,6 +552,49 @@ export function PanelTurnosDashboard() {
           </button>
         </div>
       </div>
+      {cancelConfirmReservationId ? (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/55 px-4"
+          onClick={() => {
+            if (cancellingReservationId !== cancelConfirmReservationId) {
+              setCancelConfirmReservationId(null);
+            }
+          }}
+        >
+          <div
+            className="w-full max-w-sm rounded-2xl border border-white/12 bg-[#171717] p-4 shadow-[0_18px_45px_rgba(0,0,0,0.5)]"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3 className="font-heading text-[20px] text-[var(--soft-gray)]">Cancelar turno</h3>
+            <p className="mt-2 text-[13px] leading-relaxed text-[var(--soft-gray)]/78">
+              ¿Estás seguro que deseás cancelar este turno? Esta acción no se puede deshacer.
+            </p>
+            <div className="mt-4 flex items-center justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => setCancelConfirmReservationId(null)}
+                disabled={cancellingReservationId === cancelConfirmReservationId}
+                className="inline-flex h-9 items-center rounded-xl border border-white/15 px-3 text-[12px] font-semibold text-[var(--soft-gray)]/85 transition hover:bg-white/5 disabled:opacity-60"
+              >
+                Volver
+              </button>
+              <button
+                type="button"
+                onClick={async () => {
+                  const id = cancelConfirmReservationId;
+                  if (!id) return;
+                  await handleCancelReservation(id);
+                  setCancelConfirmReservationId(null);
+                }}
+                disabled={cancellingReservationId === cancelConfirmReservationId}
+                className="inline-flex h-9 items-center rounded-xl border border-red-400/45 bg-red-500/12 px-3 text-[12px] font-semibold text-red-200/95 transition hover:bg-red-500/18 disabled:opacity-60"
+              >
+                {cancellingReservationId === cancelConfirmReservationId ? "Cancelando..." : "Sí, cancelar"}
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }

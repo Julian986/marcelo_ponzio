@@ -17,7 +17,10 @@ function formatDayMonthFromKey(dateKey: string): string {
 export function MisTurnosClient() {
   const [rows, setRows] = useState<CustomerReservationPublic[] | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [tab, setTab] = useState<"upcoming" | "past">("upcoming");
+  const [cancellingId, setCancellingId] = useState<string | null>(null);
+  const [cancelConfirmId, setCancelConfirmId] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     setError(null);
@@ -45,6 +48,12 @@ export function MisTurnosClient() {
     void load();
   }, [load]);
 
+  useEffect(() => {
+    if (!successMessage) return;
+    const t = window.setTimeout(() => setSuccessMessage(null), 3200);
+    return () => window.clearTimeout(t);
+  }, [successMessage]);
+
   const upcoming = useMemo(
     () => (rows ?? []).filter((r) => isUpcomingReservation(r)).sort((a, b) => a.startsAtIso.localeCompare(b.startsAtIso)),
     [rows],
@@ -55,6 +64,32 @@ export function MisTurnosClient() {
   );
 
   const list = tab === "upcoming" ? upcoming : past;
+
+  const handleCancelReservation = useCallback(
+    async (reservationId: string) => {
+      setCancellingId(reservationId);
+      setError(null);
+      setSuccessMessage(null);
+      try {
+        const res = await fetch(`/api/me/reservations/${encodeURIComponent(reservationId)}`, {
+          method: "DELETE",
+          credentials: "same-origin",
+        });
+        const data = (await res.json()) as { error?: string };
+        if (!res.ok) {
+          setError(data.error ?? "No se pudo cancelar el turno.");
+          return;
+        }
+        await load();
+        setSuccessMessage("Turno cancelado con éxito.");
+      } catch {
+        setError("Sin conexión.");
+      } finally {
+        setCancellingId(null);
+      }
+    },
+    [load],
+  );
 
   return (
     <main className="mx-auto w-full max-w-md px-4 pt-6 pb-24">
@@ -101,6 +136,14 @@ export function MisTurnosClient() {
           </Link>
         </p>
       ) : null}
+      {successMessage ? (
+        <p
+          role="status"
+          className="mb-4 rounded-xl border border-emerald-500/35 bg-emerald-950/25 px-3 py-2.5 text-[13px] text-emerald-100/95"
+        >
+          {successMessage}
+        </p>
+      ) : null}
 
       {rows === null ? (
         <p className="py-10 text-center text-[14px] text-[var(--soft-gray)]/55">Cargando…</p>
@@ -135,18 +178,76 @@ export function MisTurnosClient() {
                   </span>
                 ) : null}
               </div>
+              {r.reservationStatus === "cancelled" && r.cancelledBy === "panel" ? (
+                <p className="mt-2 rounded-xl border border-amber-500/30 bg-amber-950/20 px-3 py-2 text-[12px] leading-snug text-amber-100/88">
+                  Este turno fue cancelado desde el panel del salón.
+                </p>
+              ) : null}
               {tab === "upcoming" && (r.reservationStatus === "confirmed" || r.reservationStatus === "pending_payment") ? (
-                <Link
-                  href={`/perfil/mis-turnos/${encodeURIComponent(r.id)}/reprogramar`}
-                  className="mt-3 inline-flex h-9 cursor-pointer items-center rounded-xl border border-[var(--premium-gold)]/45 bg-[var(--premium-gold)]/12 px-3 text-[12px] font-semibold text-[var(--premium-gold)] transition hover:bg-[var(--premium-gold)]/18"
-                >
-                  Cambiar horario
-                </Link>
+                <div className="mt-3 flex flex-wrap items-center gap-2">
+                  <Link
+                    href={`/perfil/mis-turnos/${encodeURIComponent(r.id)}/reprogramar`}
+                    className="inline-flex h-9 cursor-pointer items-center rounded-xl border border-[var(--premium-gold)]/45 bg-[var(--premium-gold)]/12 px-3 text-[12px] font-semibold text-[var(--premium-gold)] transition hover:bg-[var(--premium-gold)]/18"
+                  >
+                    Cambiar horario
+                  </Link>
+                  <button
+                    type="button"
+                    disabled={cancellingId === r.id}
+                    onClick={() => setCancelConfirmId(r.id)}
+                    className="inline-flex h-9 cursor-pointer items-center rounded-xl border border-red-400/45 bg-red-500/10 px-3 text-[12px] font-semibold text-red-200/95 transition hover:bg-red-500/16 disabled:cursor-not-allowed disabled:opacity-60"
+                  >
+                    {cancellingId === r.id ? "Cancelando..." : "Cancelar turno"}
+                  </button>
+                </div>
               ) : null}
             </li>
           ))}
         </ul>
       )}
+      {cancelConfirmId ? (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/55 px-4"
+          onClick={() => {
+            if (cancellingId !== cancelConfirmId) {
+              setCancelConfirmId(null);
+            }
+          }}
+        >
+          <div
+            className="w-full max-w-sm rounded-2xl border border-white/12 bg-[#171717] p-4 shadow-[0_18px_45px_rgba(0,0,0,0.5)]"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3 className="font-heading text-[20px] text-[var(--soft-gray)]">Cancelar turno</h3>
+            <p className="mt-2 text-[13px] leading-relaxed text-[var(--soft-gray)]/78">
+              ¿Estás seguro que deseás cancelar este turno? Esta acción no se puede deshacer.
+            </p>
+            <div className="mt-4 flex items-center justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => setCancelConfirmId(null)}
+                disabled={cancellingId === cancelConfirmId}
+                className="inline-flex h-9 items-center rounded-xl border border-white/15 px-3 text-[12px] font-semibold text-[var(--soft-gray)]/85 transition hover:bg-white/5 disabled:opacity-60"
+              >
+                Volver
+              </button>
+              <button
+                type="button"
+                onClick={async () => {
+                  const id = cancelConfirmId;
+                  if (!id) return;
+                  await handleCancelReservation(id);
+                  setCancelConfirmId(null);
+                }}
+                disabled={cancellingId === cancelConfirmId}
+                className="inline-flex h-9 items-center rounded-xl border border-red-400/45 bg-red-500/12 px-3 text-[12px] font-semibold text-red-200/95 transition hover:bg-red-500/18 disabled:opacity-60"
+              >
+                {cancellingId === cancelConfirmId ? "Cancelando..." : "Sí, cancelar"}
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </main>
   );
 }
