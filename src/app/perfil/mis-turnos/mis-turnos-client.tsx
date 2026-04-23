@@ -28,7 +28,7 @@ export function MisTurnosClient() {
       const res = await fetch("/api/me/reservations?source=mis_turnos", { credentials: "same-origin" });
       if (res.status === 401) {
         setRows([]);
-        setError("IniciÃ¡ sesiÃ³n desde Perfil con tu WhatsApp.");
+        setError("Iniciá sesión desde Perfil con tu WhatsApp.");
         return;
       }
       const data = (await res.json()) as { reservations?: CustomerReservationPublic[]; error?: string };
@@ -39,7 +39,7 @@ export function MisTurnosClient() {
       }
       setRows(Array.isArray(data.reservations) ? data.reservations : []);
     } catch {
-      setError("Sin conexiÃ³n.");
+      setError("Sin conexión.");
       setRows([]);
     }
   }, []);
@@ -81,9 +81,9 @@ export function MisTurnosClient() {
           return;
         }
         await load();
-        setSuccessMessage("Turno cancelado con Ã©xito.");
+        setSuccessMessage("Turno cancelado con éxito.");
       } catch {
-        setError("Sin conexiÃ³n.");
+        setError("Sin conexión.");
       } finally {
         setCancellingId(null);
       }
@@ -103,7 +103,7 @@ export function MisTurnosClient() {
         </Link>
         <div>
           <h1 className="font-heading text-[22px] leading-tight text-[var(--premium-gold)]">Mis turnos</h1>
-          <p className="mt-0.5 text-[12px] text-[var(--soft-gray)]/55">PrÃ³ximos y pasados</p>
+          <p className="mt-0.5 text-[12px] text-[var(--soft-gray)]/55">Próximos y pasados</p>
         </div>
       </header>
 
@@ -115,7 +115,7 @@ export function MisTurnosClient() {
             tab === "upcoming" ? "bg-[var(--premium-gold)] text-black" : "text-[var(--soft-gray)]/75 hover:bg-white/5"
           }`}
         >
-          PrÃ³ximos ({upcoming.length})
+          Próximos ({upcoming.length})
         </button>
         <button
           type="button"
@@ -146,10 +146,10 @@ export function MisTurnosClient() {
       ) : null}
 
       {rows === null ? (
-        <p className="py-10 text-center text-[14px] text-[var(--soft-gray)]/55">Cargandoâ€¦</p>
+        <p className="py-10 text-center text-[14px] text-[var(--soft-gray)]/55">Cargando…</p>
       ) : list.length === 0 ? (
         <p className="py-10 text-center text-[14px] text-[var(--soft-gray)]/55">
-          {tab === "upcoming" ? "No tenÃ©s turnos prÃ³ximos." : "No hay turnos pasados para mostrar."}
+          {tab === "upcoming" ? "No tenés turnos próximos." : "No hay turnos pasados para mostrar."}
         </p>
       ) : (
         <ul className="space-y-3">
@@ -163,7 +163,7 @@ export function MisTurnosClient() {
                   {r.timeLocal}
                   <span className="ml-1 text-[13px] font-medium text-[var(--premium-gold)]/75">hs</span>
                 </span>
-                <span className="text-[var(--soft-gray)]/90"> Â· {formatDayMonthFromKey(r.dateKey)}</span>
+                <span className="text-[var(--soft-gray)]/90"> · {formatDayMonthFromKey(r.dateKey)}</span>
               </p>
               <p className="mt-1.5 text-[12px] text-[var(--soft-gray)]/52">{r.displayDate}</p>
               <p className="mt-2.5 text-[16px] font-semibold text-[var(--soft-gray)]">{r.treatmentName}</p>
@@ -174,13 +174,13 @@ export function MisTurnosClient() {
                 </span>
                 {r.source === "panel" ? (
                   <span className="rounded-full bg-sky-500/14 px-2.5 py-1 text-[11px] font-semibold text-sky-200/95">
-                    Cargado en salÃ³n
+                    Cargado en salón
                   </span>
                 ) : null}
               </div>
               {r.reservationStatus === "cancelled" && r.cancelledBy === "panel" ? (
                 <p className="mt-2 rounded-xl border border-amber-500/30 bg-amber-950/20 px-3 py-2 text-[12px] leading-snug text-amber-100/88">
-                  Este turno fue cancelado desde el panel del salÃ³n.
+                  Este turno fue cancelado desde el panel del salón.
                 </p>
               ) : null}
               {tab === "upcoming" && (r.reservationStatus === "confirmed" || r.reservationStatus === "pending_payment") ? (
@@ -220,7 +220,7 @@ export function MisTurnosClient() {
           >
             <h3 className="font-heading text-[20px] text-[var(--soft-gray)]">Cancelar turno</h3>
             <p className="mt-2 text-[13px] leading-relaxed text-[var(--soft-gray)]/78">
-              Â¿EstÃ¡s seguro que deseÃ¡s cancelar este turno? Esta acciÃ³n no se puede deshacer.
+              ¿Estás seguro que deseás cancelar este turno? Esta acción no se puede deshacer.
             </p>
             <div className="mt-4 flex items-center justify-end gap-2">
               <button
@@ -242,7 +242,7 @@ export function MisTurnosClient() {
                 disabled={cancellingId === cancelConfirmId}
                 className="inline-flex h-9 items-center rounded-xl border border-red-400/45 bg-red-500/12 px-3 text-[12px] font-semibold text-red-200/95 transition hover:bg-red-500/18 disabled:opacity-60"
               >
-                {cancellingId === cancelConfirmId ? "Cancelando..." : "SÃ­, cancelar"}
+                {cancellingId === cancelConfirmId ? "Cancelando..." : "Sí, cancelar"}
               </button>
             </div>
           </div>

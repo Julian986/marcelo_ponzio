@@ -79,6 +79,7 @@ export default function RootLayout({
   return (
     <html lang="es">
       <head>
+        <meta charSet="utf-8" />
         <link rel="preload" href={BRAND_LOGO_SRC} as="image" />
       </head>
       <body
