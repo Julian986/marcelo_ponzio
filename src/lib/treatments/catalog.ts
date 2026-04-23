@@ -31,7 +31,7 @@ export const SALON_TREATMENTS: SalonTreatment[] = [
     subtitle: "Color, lavado, corte y peinado · 1 h 30 min",
     description:
       "Incluye color, lavado, corte y peinado. En todos los servicios el lavado está incluido.",
-    category: "Cortes y peinado",
+    category: "Color",
     durationLabel: "1 h 30 min",
     durationMinutes: 90,
     imageUrl: IMG.salon,
