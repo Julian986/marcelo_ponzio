@@ -9,12 +9,12 @@ import {
   type BookingSlotScope,
 } from "@/lib/booking/compute-bookable-slots";
 import { formatSalonDisplayDate } from "@/lib/booking/salon-availability";
-import { canonicalPhoneDigitsAR } from "@/lib/customer/phone-canonical-ar";
+import { canonicalPhoneDigitsAR, customerPhoneDigitsQueryValues } from "@/lib/customer/phone-canonical-ar";
 import { isPublicLeadTimeViolated } from "@/lib/booking/public-slot-lead";
 import { reservationWouldExceedSalonCapacity, slotIntervalMs } from "@/lib/booking/slot-overlap";
 import { SALON_TREATMENTS, findSalonTreatmentById, type SalonTreatment } from "@/lib/treatments/catalog";
 
-import { backfillCustomerPhoneDigitsBatch } from "@/lib/reservations/customer-queries";
+import { backfillCustomerPhoneDigitsBatch, renormalizeCustomerPhoneDigitsBatch } from "@/lib/reservations/customer-queries";
 
 import type {
   CreateReservationInput,
@@ -45,8 +45,8 @@ function pendingTtlMs(): number {
   return n * 60 * 1000;
 }
 
-/** Subir si cambia la definición de índices (p. ej. quitar unique en startsAt para doble turno 9–11:30). */
-const RESERVATION_INDEXES_VERSION = 3;
+/** Subir si cambia la definición de índices o la normalización de teléfonos (fuerza re-backfill). */
+const RESERVATION_INDEXES_VERSION = 4;
 let reservationIndexesVersionApplied = 0;
 
 export async function ensureReservationIndexes(db: Db) {
@@ -75,8 +75,15 @@ export async function ensureReservationIndexes(db: Db) {
   await logs.createIndex({ receivedAt: -1 }, { name: "mp_logs_received" });
   await logs.createIndex({ resourceId: 1, receivedAt: -1 }, { name: "mp_logs_resource" });
 
+  // Rellena documentos sin el campo customerPhoneDigits
   for (let i = 0; i < 20; i++) {
     const n = await backfillCustomerPhoneDigitsBatch(db, 250);
+    if (n === 0) break;
+  }
+
+  // Re-normaliza documentos con formas canónicas incorrectas (prefijo "0" o "9" sin strip)
+  for (let i = 0; i < 20; i++) {
+    const n = await renormalizeCustomerPhoneDigitsBatch(db, 250);
     if (n === 0) break;
   }
 
@@ -507,7 +514,8 @@ export async function rescheduleReservation(
     if (!canon) {
       return { error: "Tenés que iniciar sesión en tu perfil.", code: "UNAUTHORIZED" };
     }
-    if (canonicalPhoneDigitsAR(doc.customerPhone) !== canon) {
+    const docDigits = doc.customerPhoneDigits ?? canonicalPhoneDigitsAR(doc.customerPhone);
+    if (!customerPhoneDigitsQueryValues(canon).includes(docDigits)) {
       return { error: "No podés modificar un turno de otro cliente.", code: "FORBIDDEN" };
     }
   }
@@ -628,7 +636,8 @@ export async function cancelReservation(
     if (!canon) {
       return { error: "Tenés que iniciar sesión en tu perfil.", code: "UNAUTHORIZED" };
     }
-    if (canonicalPhoneDigitsAR(doc.customerPhone) !== canon) {
+    const docDigits = doc.customerPhoneDigits ?? canonicalPhoneDigitsAR(doc.customerPhone);
+    if (!customerPhoneDigitsQueryValues(canon).includes(docDigits)) {
       return { error: "No podés modificar un turno de otro cliente.", code: "FORBIDDEN" };
     }
   }

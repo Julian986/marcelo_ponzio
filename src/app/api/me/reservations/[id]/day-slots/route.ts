@@ -3,7 +3,7 @@ import { NextResponse } from "next/server";
 
 import type { BookingSlotScope } from "@/lib/booking/compute-bookable-slots";
 import { computeReprogramDayRows } from "@/lib/booking/panel-reprogram-day-rows";
-import { canonicalPhoneDigitsAR } from "@/lib/customer/phone-canonical-ar";
+import { canonicalPhoneDigitsAR, customerPhoneDigitsQueryValues } from "@/lib/customer/phone-canonical-ar";
 import { CUSTOMER_PROFILE_COOKIE, readCustomerProfilePhoneDigits } from "@/lib/customer/customer-session";
 import { getDb } from "@/lib/mongodb";
 import { findReservationByHexId, ensureReservationIndexes } from "@/lib/reservations/service";
@@ -35,7 +35,11 @@ export async function GET(request: Request, context: { params: Promise<{ id: str
     const db = await getDb();
     await ensureReservationIndexes(db);
     const doc = await findReservationByHexId(db, hex);
-    if (!doc || canonicalPhoneDigitsAR(doc.customerPhone) !== digits) {
+    if (!doc) {
+      return NextResponse.json({ error: "No encontrado." }, { status: 404 });
+    }
+    const docDigits = doc.customerPhoneDigits ?? canonicalPhoneDigitsAR(doc.customerPhone);
+    if (!customerPhoneDigitsQueryValues(digits).includes(docDigits)) {
       return NextResponse.json({ error: "No encontrado." }, { status: 404 });
     }
 

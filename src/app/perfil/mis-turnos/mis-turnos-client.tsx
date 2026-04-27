@@ -4,6 +4,7 @@ import { ChevronLeft } from "lucide-react";
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
+import { usePerfilSession } from "@/components/perfil/perfil-session-provider";
 import type { CustomerReservationPublic } from "@/lib/reservations/customer-public-serialize";
 import { isUpcomingReservation } from "@/lib/reservations/customer-public-serialize";
 import { reservationStatusLabel } from "@/lib/reservations/customer-ui-copy";
@@ -15,38 +16,28 @@ function formatDayMonthFromKey(dateKey: string): string {
 }
 
 export function MisTurnosClient() {
-  const [rows, setRows] = useState<CustomerReservationPublic[] | null>(null);
+  const { me, reservations: ctxReservations, reload: ctxReload } = usePerfilSession();
+
+  // Usamos las reservas del contexto directamente; sólo se piden de nuevo después de acciones
+  const [rows, setRows] = useState<CustomerReservationPublic[] | null>(ctxReservations);
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [tab, setTab] = useState<"upcoming" | "past">("upcoming");
   const [cancellingId, setCancellingId] = useState<string | null>(null);
   const [cancelConfirmId, setCancelConfirmId] = useState<string | null>(null);
 
-  const load = useCallback(async () => {
-    setError(null);
-    try {
-      const res = await fetch("/api/me/reservations?source=mis_turnos", { credentials: "same-origin" });
-      if (res.status === 401) {
-        setRows([]);
-        setError("Iniciá sesión desde Perfil con tu WhatsApp.");
-        return;
-      }
-      const data = (await res.json()) as { reservations?: CustomerReservationPublic[]; error?: string };
-      if (!res.ok) {
-        setError(data.error ?? "No se pudieron cargar los turnos.");
-        setRows([]);
-        return;
-      }
-      setRows(Array.isArray(data.reservations) ? data.reservations : []);
-    } catch {
-      setError("Sin conexión.");
+  // Sincronizar con el contexto cuando llegan datos nuevos
+  useEffect(() => {
+    if (ctxReservations !== null) setRows(ctxReservations);
+  }, [ctxReservations]);
+
+  // Si el contexto dice "guest", mostrar el error de sesión sin fetch extra
+  useEffect(() => {
+    if (me === "guest") {
+      setError("Iniciá sesión desde Perfil con tu WhatsApp.");
       setRows([]);
     }
-  }, []);
-
-  useEffect(() => {
-    void load();
-  }, [load]);
+  }, [me]);
 
   useEffect(() => {
     if (!successMessage) return;
@@ -80,7 +71,8 @@ export function MisTurnosClient() {
           setError(data.error ?? "No se pudo cancelar el turno.");
           return;
         }
-        await load();
+        // Refrescar el contexto global (actualiza reservas en toda la sesión)
+        await ctxReload();
         setSuccessMessage("Turno cancelado con éxito.");
       } catch {
         setError("Sin conexión.");
@@ -88,7 +80,7 @@ export function MisTurnosClient() {
         setCancellingId(null);
       }
     },
-    [load],
+    [ctxReload],
   );
 
   return (

@@ -1,7 +1,7 @@
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 
-import { canonicalPhoneDigitsAR } from "@/lib/customer/phone-canonical-ar";
+import { canonicalPhoneDigitsAR, customerPhoneDigitsQueryValues } from "@/lib/customer/phone-canonical-ar";
 import { CUSTOMER_PROFILE_COOKIE, readCustomerProfilePhoneDigits } from "@/lib/customer/customer-session";
 import { getDb } from "@/lib/mongodb";
 import { serializeReservationForCustomer } from "@/lib/reservations/customer-public-serialize";
@@ -62,7 +62,11 @@ export async function GET(_request: Request, context: { params: Promise<{ id: st
     const db = await getDb();
     await ensureReservationIndexes(db);
     const doc = await findReservationByHexId(db, hex);
-    if (!doc || canonicalPhoneDigitsAR(doc.customerPhone) !== digits) {
+    if (!doc) {
+      return NextResponse.json({ error: "No encontrado." }, { status: 404 });
+    }
+    const docDigits = doc.customerPhoneDigits ?? canonicalPhoneDigitsAR(doc.customerPhone);
+    if (!customerPhoneDigitsQueryValues(digits).includes(docDigits)) {
       return NextResponse.json({ error: "No encontrado." }, { status: 404 });
     }
     return NextResponse.json(serializeReservationForCustomer(doc));

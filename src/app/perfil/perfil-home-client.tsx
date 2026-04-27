@@ -2,73 +2,18 @@
 
 import { CalendarDays, Clock3, Percent, UserCog } from "lucide-react";
 import Link from "next/link";
-import { useCallback, useEffect, useState } from "react";
+import { useState } from "react";
 
 import { isLikelyWhatsappNumber } from "@/lib/booking/salon-availability";
-import { canonicalPhoneDigitsAR } from "@/lib/customer/phone-canonical-ar";
 import { event as gaEvent, GA_EVENT_CUSTOMER_SESSION_START } from "@/lib/gtag";
-import type { CustomerReservationPublic } from "@/lib/reservations/customer-public-serialize";
-
-type MeState = "unknown" | "guest" | "authed";
-const CUSTOMER_PROFILE_CACHE_KEY = "mp_customer_profile_cache";
-
-function pickWelcomeName(rows: CustomerReservationPublic[]): string | null {
-  const sorted = [...rows].sort((a, b) => b.startsAtIso.localeCompare(a.startsAtIso));
-  for (const r of sorted) {
-    const n = r.customerName?.trim();
-    if (n && n !== "Cliente") return n;
-  }
-  const first = sorted[0]?.customerName?.trim();
-  return first || null;
-}
+import { usePerfilSession } from "@/components/perfil/perfil-session-provider";
 
 export function PerfilHomeClient() {
-  const [me, setMe] = useState<MeState>("unknown");
-  const [welcomeName, setWelcomeName] = useState<string | null>(null);
-  const [phoneHint, setPhoneHint] = useState<string | null>(null);
+  const { me, welcomeName, logout, onLoginSuccess } = usePerfilSession();
+
   const [phoneInput, setPhoneInput] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
-  const refreshSession = useCallback(async () => {
-    try {
-      const res = await fetch("/api/me/reservations?source=perfil_home", { credentials: "same-origin" });
-      if (res.status === 401) {
-        setMe("guest");
-        setPhoneHint(null);
-        setWelcomeName(null);
-        return;
-      }
-      if (!res.ok) {
-        setMe((prev) => (prev === "authed" ? "authed" : "guest"));
-        return;
-      }
-      const data = (await res.json()) as { reservations?: CustomerReservationPublic[] };
-      const list = Array.isArray(data.reservations) ? data.reservations : [];
-      setMe("authed");
-      const name = pickWelcomeName(list);
-      setWelcomeName(name);
-      try {
-        const latest = [...list].sort((a, b) => b.startsAtIso.localeCompare(a.startsAtIso))[0];
-        localStorage.setItem(
-          CUSTOMER_PROFILE_CACHE_KEY,
-          JSON.stringify({
-            name: name ?? "",
-            phone: latest?.customerPhone ?? "",
-          }),
-        );
-      } catch {
-        // ignore localStorage failures
-      }
-    } catch {
-      setMe("guest");
-      setWelcomeName(null);
-    }
-  }, []);
-
-  useEffect(() => {
-    void refreshSession();
-  }, [refreshSession]);
 
   async function handleLogin(e: React.FormEvent) {
     e.preventDefault();
@@ -85,16 +30,14 @@ export function PerfilHomeClient() {
         credentials: "same-origin",
         body: JSON.stringify({ phone: phoneInput.trim(), source: "perfil" }),
       });
-      const data = (await res.json()) as { error?: string; phoneHint?: string };
+      const data = (await res.json()) as { error?: string };
       if (!res.ok) {
         setError(data.error ?? "No se pudo iniciar sesión.");
         return;
       }
       gaEvent(GA_EVENT_CUSTOMER_SESSION_START, { login_source: "perfil" });
-      const digits = canonicalPhoneDigitsAR(phoneInput.trim());
-      setPhoneHint(`···${digits.slice(-4)}`);
       setPhoneInput("");
-      await refreshSession();
+      await onLoginSuccess();
     } catch {
       setError("Sin conexión. Probá de nuevo.");
     } finally {
@@ -105,15 +48,7 @@ export function PerfilHomeClient() {
   async function handleLogout() {
     setBusy(true);
     try {
-      await fetch("/api/me/session", { method: "DELETE", credentials: "same-origin" });
-      setMe("guest");
-      setPhoneHint(null);
-      setWelcomeName(null);
-      try {
-        localStorage.removeItem(CUSTOMER_PROFILE_CACHE_KEY);
-      } catch {
-        // ignore localStorage failures
-      }
+      await logout();
     } finally {
       setBusy(false);
     }
@@ -128,23 +63,20 @@ export function PerfilHomeClient() {
             <p className="text-[17px] font-medium leading-snug text-[var(--soft-gray)]">
               {welcomeName ? (
                 <>
-                  Bienvenido/a, <span className="text-[var(--premium-gold)]">{welcomeName}</span>
+                  Hola, <span className="text-[var(--premium-gold)]">{welcomeName}</span>
                 </>
               ) : (
                 <span>Bienvenido/a</span>
               )}
             </p>
-            <p className="text-[12px] text-[var(--soft-gray)]/58">
-              Sesión iniciada{phoneHint ? ` ${phoneHint}` : ""}
-              <button
-                type="button"
-                disabled={busy}
-                onClick={() => void handleLogout()}
-                className="ml-2 cursor-pointer font-semibold text-[var(--premium-gold)] underline-offset-2 hover:underline disabled:opacity-50"
-              >
-                Salir
-              </button>
-            </p>
+            <button
+              type="button"
+              disabled={busy}
+              onClick={() => void handleLogout()}
+              className="text-[12px] cursor-pointer text-[var(--soft-gray)]/55 underline-offset-2 hover:underline disabled:opacity-50"
+            >
+              Cerrar sesión
+            </button>
           </div>
         ) : me === "guest" ? (
           <p className="mt-2 text-[12px] text-[var(--soft-gray)]/62">
@@ -155,7 +87,7 @@ export function PerfilHomeClient() {
         )}
       </header>
 
-      {me !== "authed" ? (
+      {me === "guest" ? (
         <section
           id="acceso"
           className="mb-4 rounded-2xl border border-white/8 bg-[#181818] px-4 py-4 shadow-[0_14px_30px_rgba(0,0,0,0.65)]"
@@ -253,7 +185,7 @@ export function PerfilHomeClient() {
         </div>
       </section>
 
-      {me !== "authed" ? (
+      {me === "guest" ? (
         <section className="mt-4 rounded-2xl border border-white/6 bg-[#141414] px-4 py-3">
           <p className="text-[12px] uppercase tracking-[0.18em] text-[var(--soft-gray)]/70">Tip</p>
           <p className="mt-1.5 text-[13px] text-[var(--soft-gray)]/92">
@@ -265,4 +197,3 @@ export function PerfilHomeClient() {
     </main>
   );
 }
-
