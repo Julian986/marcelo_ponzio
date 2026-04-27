@@ -140,9 +140,19 @@ export function MisTurnosClient() {
       {rows === null ? (
         <p className="py-10 text-center text-[14px] text-[var(--soft-gray)]/55">Cargando…</p>
       ) : list.length === 0 ? (
-        <p className="py-10 text-center text-[14px] text-[var(--soft-gray)]/55">
-          {tab === "upcoming" ? "No tenés turnos próximos." : "No hay turnos pasados para mostrar."}
-        </p>
+        <div className="flex flex-col items-center gap-4 py-10">
+          <p className="text-[14px] text-[var(--soft-gray)]/55">
+            {tab === "upcoming" ? "No tenés turnos próximos." : "No hay turnos pasados para mostrar."}
+          </p>
+          {tab === "upcoming" ? (
+            <Link
+              href="/turnos"
+              className="inline-flex h-10 items-center rounded-2xl bg-[var(--premium-gold)] px-5 text-[13px] font-semibold text-black transition hover:opacity-90 whitespace-nowrap"
+            >
+              Reservar nuevo turno
+            </Link>
+          ) : null}
+        </div>
       ) : (
         <ul className="space-y-3">
           {list.map((r) => (
@@ -197,6 +207,17 @@ export function MisTurnosClient() {
           ))}
         </ul>
       )}
+      {me === "authed" ? (
+        <div className="fixed bottom-20 left-1/2 -translate-x-1/2 z-40">
+          <Link
+            href="/turnos"
+            className="inline-flex h-10 items-center rounded-2xl bg-[var(--premium-gold)] px-5 text-[13px] font-semibold text-black shadow-[0_6px_22px_rgba(0,0,0,0.45)] transition hover:opacity-90 whitespace-nowrap"
+          >
+            + Reservar nuevo turno
+          </Link>
+        </div>
+      ) : null}
+
       {cancelConfirmId ? (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/55 px-4"
