@@ -2,7 +2,7 @@ import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 
 import { isLikelyWhatsappNumber } from "@/lib/booking/salon-availability";
-import { canonicalPhoneDigitsAR } from "@/lib/customer/phone-canonical-ar";
+import { canonicalPhoneDigitsAR, customerPhoneDigitsQueryValues } from "@/lib/customer/phone-canonical-ar";
 import { logCustomerSessionStart, normalizeSessionEventSource } from "@/lib/customer/session-analytics";
 import { CUSTOMER_PROFILE_COOKIE, mintCustomerProfileToken } from "@/lib/customer/customer-session";
 import { getDb } from "@/lib/mongodb";
@@ -54,6 +54,30 @@ export async function POST(request: Request) {
   if (!digits) {
     return NextResponse.json({ error: "Número inválido." }, { status: 400 });
   }
+
+  // Validar que el número tiene al menos una reserva antes de emitir la cookie.
+  let customerName: string | null = null;
+  try {
+    const db = await getDb();
+    const keys = customerPhoneDigitsQueryValues(digits);
+    const found = await db
+      .collection("reservations")
+      .findOne<{ customerName?: string }>(
+        { customerPhoneDigits: { $in: keys } },
+        { projection: { customerName: 1 } },
+      );
+    if (!found) {
+      return NextResponse.json(
+        { error: "No encontramos reservas con ese número. Usá el mismo WhatsApp con el que reservaste." },
+        { status: 404 },
+      );
+    }
+    customerName = found.customerName?.trim() || null;
+  } catch (e) {
+    console.error("[api/me/session] db validation", e);
+    // Si la DB falla no bloqueamos el login.
+  }
+
   const token = mintCustomerProfileToken(digits);
   const cookieStore = await cookies();
   cookieStore.set(CUSTOMER_PROFILE_COOKIE, token, {
@@ -70,6 +94,7 @@ export async function POST(request: Request) {
       phoneDigits: digits,
       userAgent: request.headers.get("user-agent"),
       source,
+      customerName,
     });
   } catch (e) {
     console.error("[api/me/session] analytics", e);

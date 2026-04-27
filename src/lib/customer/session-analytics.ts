@@ -68,6 +68,16 @@ function argentinaDayKey(now = new Date()): string {
 }
 
 /**
+ * Fecha y hora en horario de Argentina (UTC-3 fijo, sin DST desde 2009).
+ * Devuelve un string ISO 8601 con offset explícito: "2026-04-27T16:12:56.941-03:00".
+ * Fácil de leer en Mongo Compass y en cualquier planilla.
+ */
+function argentinaIsoString(date: Date): string {
+  const local = new Date(date.getTime() - 3 * 60 * 60_000);
+  return local.toISOString().replace("Z", "-03:00");
+}
+
+/**
  * Registra un inicio de sesión de cliente (POST /api/me/session exitoso).
  * No debe romper el login si falla el insert.
  */
@@ -77,13 +87,17 @@ export async function logCustomerSessionStart(
     phoneDigits: string;
     userAgent: string | null;
     source: CustomerSessionEventSource;
+    customerName?: string | null;
   },
 ): Promise<void> {
   try {
     await ensureCustomerSessionEventIndexes(db);
+    const now = new Date();
     await db.collection(COLLECTION).insertOne({
-      at: new Date(),
+      at: now,
+      atBsAs: argentinaIsoString(now),
       phoneFingerprint: fingerprintPhoneDigitsForSessionAnalytics(input.phoneDigits),
+      customerName: input.customerName?.trim() || null,
       source: input.source,
       userAgent: (input.userAgent ?? "").slice(0, 240),
     });
@@ -101,6 +115,7 @@ export async function logCustomerDailyActive(
   input: {
     phoneDigits: string;
     source: CustomerActivitySource;
+    customerName?: string | null;
     at?: Date;
   },
 ): Promise<void> {
@@ -108,7 +123,9 @@ export async function logCustomerDailyActive(
     await ensureCustomerDailyActiveIndexes(db);
     const at = input.at ?? new Date();
     const dayKey = argentinaDayKey(at);
+    const atBsAs = argentinaIsoString(at);
     const phoneFingerprint = fingerprintPhoneDigitsForSessionAnalytics(input.phoneDigits);
+    const name = input.customerName?.trim() || null;
     await db.collection(DAILY_ACTIVE_COLLECTION).updateOne(
       { dayKey, phoneFingerprint },
       {
@@ -116,11 +133,15 @@ export async function logCustomerDailyActive(
           dayKey,
           phoneFingerprint,
           firstSeenAt: at,
+          firstSeenAtBsAs: atBsAs,
           firstSource: input.source,
+          ...(name ? { customerName: name } : {}),
         },
         $set: {
           lastSeenAt: at,
+          lastSeenAtBsAs: atBsAs,
           lastSource: input.source,
+          ...(name ? { customerName: name } : {}),
         },
       },
       { upsert: true },

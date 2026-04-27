@@ -27,8 +27,9 @@ export async function GET(request: Request) {
     const db = await getDb();
     await ensureReservationIndexes(db);
     const source = normalizeActivitySource(new URL(request.url).searchParams.get("source"));
-    await logCustomerDailyActive(db, { phoneDigits: digits, source });
     const list = await listReservationsByCustomerPhoneDigits(db, digits);
+    const customerName = list.find((r) => r.customerName?.trim())?.customerName?.trim() ?? null;
+    await logCustomerDailyActive(db, { phoneDigits: digits, source, customerName });
     return NextResponse.json({
       reservations: list.map(serializeReservationForCustomer),
     });
