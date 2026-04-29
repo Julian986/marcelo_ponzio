@@ -2,6 +2,7 @@
 
 import { ChevronLeft } from "lucide-react";
 import Link from "next/link";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { usePerfilSession } from "@/components/perfil/perfil-session-provider";
@@ -17,6 +18,8 @@ function formatDayMonthFromKey(dateKey: string): string {
 
 export function MisTurnosClient() {
   const { me, reservations: ctxReservations, reload: ctxReload } = usePerfilSession();
+  const router = useRouter();
+  const searchParams = useSearchParams();
 
   // Usamos las reservas del contexto directamente; sólo se piden de nuevo después de acciones
   const [rows, setRows] = useState<CustomerReservationPublic[] | null>(ctxReservations);
@@ -41,9 +44,19 @@ export function MisTurnosClient() {
 
   useEffect(() => {
     if (!successMessage) return;
-    const t = window.setTimeout(() => setSuccessMessage(null), 3200);
+    const t = window.setTimeout(() => setSuccessMessage(null), 4500);
     return () => window.clearTimeout(t);
   }, [successMessage]);
+
+  // Al volver desde reprogramar, recargar datos y mostrar confirmación
+  useEffect(() => {
+    if (searchParams.get("rescheduled") !== "1") return;
+    router.replace("/perfil/mis-turnos", { scroll: false });
+    void ctxReload().then(() => {
+      setSuccessMessage("¡Turno reprogramado con éxito!");
+    });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const upcoming = useMemo(
     () => (rows ?? []).filter((r) => isUpcomingReservation(r)).sort((a, b) => a.startsAtIso.localeCompare(b.startsAtIso)),

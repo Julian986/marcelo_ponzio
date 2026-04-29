@@ -275,7 +275,8 @@ export function ReprogramarTurnoClient({
         setSaveError(data.error ?? "No se pudo guardar.");
         return;
       }
-      router.push(backHref);
+      const dest = variant === "customer" ? `${backHref}?rescheduled=1` : backHref;
+      router.push(dest);
       router.refresh();
     } catch {
       setSaveError("Sin conexión.");
