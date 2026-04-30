@@ -45,7 +45,7 @@ export function getPublicBookableTimeSlotsForTreatment(
       slots = filterSlotsServiceEndsOnOrBeforeClose(slots, t.durationMinutes);
     }
   }
-  return filterPublicSlotsByTreatmentRules(treatmentId, slots);
+  return filterPublicSlotsByTreatmentRules(treatmentId, slots, dateKey);
 }
 
 /** Validación servidor para reserva pública (misma regla que UI). */

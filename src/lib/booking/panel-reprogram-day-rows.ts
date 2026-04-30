@@ -77,7 +77,7 @@ export async function computeReprogramDayRows(
   let candidateSlots =
     scope === "public" ? getPublicBookableTimeSlots(dateKey, params.now) : getAvailableTimesForDate(dateKey);
   candidateSlots = filterSlotsServiceEndsOnOrBeforeClose(candidateSlots, treatment.durationMinutes);
-  candidateSlots = filterPublicSlotsByTreatmentRules(treatment.id, candidateSlots);
+  candidateSlots = filterPublicSlotsByTreatmentRules(treatment.id, candidateSlots, dateKey);
 
   const available = await computeBookableSlots(db, {
     dateKey,

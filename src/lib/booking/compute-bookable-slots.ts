@@ -43,7 +43,7 @@ export async function computeBookableSlots(
       : getAvailableTimesForDate(params.dateKey);
 
   slots = filterSlotsServiceEndsOnOrBeforeClose(slots, treatment.durationMinutes);
-  slots = filterPublicSlotsByTreatmentRules(treatment.id, slots);
+  slots = filterPublicSlotsByTreatmentRules(treatment.id, slots, params.dateKey);
   const busy = await loadBusyIntervalsMs(db, params.dateKey, excludeId);
   const capGetter = await buildCapGetterForDate(db, params.dateKey);
   return filterSlotsBySalonCapacity(slots, params.dateKey, treatment.durationMinutes, busy, capGetter);
@@ -108,11 +108,11 @@ export async function computeBookableSlotsForTreatmentIds(
     slots = [startAt];
     for (const t of treatments) {
       if (t.id === "keratina") continue;
-      slots = filterPublicSlotsByTreatmentRules(t.id, slots);
+      slots = filterPublicSlotsByTreatmentRules(t.id, slots, params.dateKey);
     }
   } else {
     for (const t of treatments) {
-      slots = filterPublicSlotsByTreatmentRules(t.id, slots);
+      slots = filterPublicSlotsByTreatmentRules(t.id, slots, params.dateKey);
     }
   }
   const busy = await loadBusyIntervalsMs(db, params.dateKey, excludeId);
