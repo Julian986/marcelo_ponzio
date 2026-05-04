@@ -168,7 +168,7 @@ async function validatePublicTurnosReservation(
   if (isPublicLeadTimeViolated(input.dateKey, startsAt, now)) {
     return {
       ok: false,
-      error: "Los turnos web se pueden reservar con al menos 2 días de anticipación.",
+      error: "Los turnos web solo se pueden reservar a partir de mañana (no el mismo día).",
       code: "LEAD_TIME",
     };
   }
@@ -538,7 +538,7 @@ export async function rescheduleReservation(
   if (input.actor === "customer" && doc.source === "app_turnos") {
     if (isPublicLeadTimeViolated(newKey, startsAtNew, input.now)) {
       return {
-        error: "Los turnos web se pueden reservar con al menos 2 días de anticipación.",
+        error: "Los turnos web solo se pueden reservar a partir de mañana (no el mismo día).",
         code: "LEAD_TIME",
       };
     }

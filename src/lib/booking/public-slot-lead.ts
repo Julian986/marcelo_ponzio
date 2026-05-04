@@ -7,21 +7,27 @@ import { findSalonTreatmentById } from "@/lib/treatments/catalog";
 /** Agenda y “hoy” para reglas de reserva pública (Rosario = mismo offset que CABA). */
 export const RESERVATION_TZ = "America/Argentina/Buenos_Aires";
 
-const PUBLIC_MIN_LEAD_DAYS = 2;
+/** Suma un día al calendario (yyyy-MM-dd) sin mezclar husos horarios. */
+function addOneCalendarDayFromKey(dateKey: string): string {
+  const [y, m, d] = dateKey.split("-").map((v) => parseInt(v, 10));
+  const next = new Date(Date.UTC(y, m - 1, d));
+  next.setUTCDate(next.getUTCDate() + 1);
+  const yy = next.getUTCFullYear();
+  const mm = String(next.getUTCMonth() + 1).padStart(2, "0");
+  const dd = String(next.getUTCDate()).padStart(2, "0");
+  return `${yy}-${mm}-${dd}`;
+}
 
 export function argentinaTodayDateKey(now = new Date()): string {
   return formatInTimeZone(now, RESERVATION_TZ, "yyyy-MM-dd");
 }
 
+/** Primer día reservable en la web: mañana respecto al “hoy” en Argentina (no se reserva el mismo día). */
 export function minPublicBookableDateKey(now = new Date()): string {
-  return formatInTimeZone(
-    new Date(now.getTime() + PUBLIC_MIN_LEAD_DAYS * 24 * 60 * 60 * 1000),
-    RESERVATION_TZ,
-    "yyyy-MM-dd",
-  );
+  return addOneCalendarDayFromKey(argentinaTodayDateKey(now));
 }
 
-/** Horarios visibles para usuarios web: solo desde 2 días en adelante. */
+/** Horarios visibles para usuarios web: solo desde mañana en adelante. */
 export function getPublicBookableTimeSlots(dateKey: string, now = new Date()): string[] {
   if (dateKey < minPublicBookableDateKey(now)) return [];
   const raw = getAvailableTimesForDate(dateKey);
@@ -29,7 +35,7 @@ export function getPublicBookableTimeSlots(dateKey: string, now = new Date()): s
 }
 
 /**
- * Reserva pública (sin DB): mínimo 2 días de anticipación, cierre vs duración del servicio,
+ * Reserva pública (sin DB): no el mismo día (desde mañana), cierre vs duración del servicio,
  * reflejos/balayage / keratina.
  * Para solapes entre clientes usá `computeBookableSlots` + `/api/booking/slots`.
  */

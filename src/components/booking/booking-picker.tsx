@@ -29,7 +29,7 @@ export type BookingPickerProps = {
    * `undefined`: usar `resolveTimeSlots` / plantilla. `null`: cargando.
    */
   remoteTimeSlots?: string[] | null;
-  /** `public`: reglas y textos de reserva web. `panel`: alta manual sin mensaje de anticipación de 2 días. */
+  /** `public`: reglas y textos de reserva web. `panel`: alta manual sin tope de “desde mañana”. */
   bookingContext?: "public" | "panel";
   bookingFocusRef?: React.RefObject<HTMLDivElement | null>;
   treatmentFirstHintVisible: boolean;
@@ -443,10 +443,10 @@ export function BookingPicker({
                 ) : (
                   <>
                     <p className="text-[13px] font-medium text-[var(--premium-gold)]">
-                      Los turnos web se reservan con 2 dias de anticipacion.
+                      Los turnos web se reservan a partir de mañana (no el mismo día).
                     </p>
                     <p className="mt-1 text-[12px] text-[var(--soft-gray)]/88">
-                      Elegi una fecha desde pasado manana para ver horarios.
+                      Elegí una fecha desde mañana para ver horarios.
                     </p>
                   </>
                 )}
