@@ -34,7 +34,7 @@ async function listActiveReservationsForDayDisplay(
 ): Promise<ReservationDoc[]> {
   const filter: Record<string, unknown> = {
     dateKey,
-    reservationStatus: { $in: ["pending_payment", "confirmed"] },
+    reservationStatus: "confirmed",
   };
   if (excludeReservationId) {
     filter._id = { $ne: excludeReservationId };

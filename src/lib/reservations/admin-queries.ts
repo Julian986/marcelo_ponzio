@@ -19,7 +19,10 @@ export async function listReservationsForCalendarMonth(
 
   return db
     .collection<ReservationDoc>(COLLECTION)
-    .find({ dateKey: { $gte: from, $lte: to } })
+    .find({
+      dateKey: { $gte: from, $lte: to },
+      reservationStatus: { $ne: "pending_payment" },
+    })
     .sort({ dateKey: 1, timeLocal: 1 })
     .toArray();
 }
