@@ -254,6 +254,7 @@ export function PanelTurnosDashboard() {
     () => list.filter((r) => r.dateKey === selectedKey && r.reservationStatus === "cancelled").length,
     [list, selectedKey],
   );
+  const cancelledLabel = cancelledCountSelectedDay === 1 ? "Cancelada" : "Canceladas";
 
   const dayRows = useMemo(() => {
     const rows: DayRow[] = [];
@@ -447,7 +448,7 @@ export function PanelTurnosDashboard() {
               title={showCancelled ? "Ocultar canceladas" : "Mostrar canceladas"}
             >
               <span className="font-semibold">{cancelledCountSelectedDay}</span>
-              <span className="font-semibold">Canceladas</span>
+              <span className="font-semibold">{cancelledLabel}</span>
             </button>
             <div className="flex items-center gap-1.5 rounded-2xl border border-white/10 bg-[#171717] px-3 py-2 text-[13px] text-[var(--soft-gray)]/88">
               <CalendarDays className="h-4 w-4 text-[var(--premium-gold)]" strokeWidth={1.75} />
