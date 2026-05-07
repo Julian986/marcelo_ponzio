@@ -176,6 +176,7 @@ export function PanelTurnosDashboard() {
   const [refreshTick, setRefreshTick] = useState(0);
   const [cancellingReservationId, setCancellingReservationId] = useState<string | null>(null);
   const [cancelConfirmReservationId, setCancelConfirmReservationId] = useState<string | null>(null);
+  const [showCancelled, setShowCancelled] = useState(false);
 
   const grid = useMemo(() => buildPanelMonthGrid(year, month), [year, month]);
   const todayKey = todayYmd(now);
@@ -228,9 +229,14 @@ export function PanelTurnosDashboard() {
     };
   }, [year, month, router, refreshTick]);
 
+  const visibleReservations = useMemo(() => {
+    if (showCancelled) return list;
+    return list.filter((r) => r.reservationStatus !== "cancelled");
+  }, [list, showCancelled]);
+
   const combinedCountsByDay = useMemo(() => {
     const m = new Map<string, number>();
-    for (const r of list) {
+    for (const r of visibleReservations) {
       m.set(r.dateKey, (m.get(r.dateKey) ?? 0) + 1);
     }
     for (const cell of grid) {
@@ -242,11 +248,16 @@ export function PanelTurnosDashboard() {
       }
     }
     return m;
-  }, [list, agendaBlocks, grid]);
+  }, [visibleReservations, agendaBlocks, grid]);
+
+  const cancelledCountSelectedDay = useMemo(
+    () => list.filter((r) => r.dateKey === selectedKey && r.reservationStatus === "cancelled").length,
+    [list, selectedKey],
+  );
 
   const dayRows = useMemo(() => {
     const rows: DayRow[] = [];
-    for (const r of list) {
+    for (const r of visibleReservations) {
       if (r.dateKey === selectedKey) rows.push({ kind: "reservation", item: r });
     }
     for (const b of agendaBlocks) {
@@ -260,7 +271,7 @@ export function PanelTurnosDashboard() {
       return ta.localeCompare(tb);
     });
     return rows;
-  }, [list, agendaBlocks, selectedKey]);
+  }, [visibleReservations, agendaBlocks, selectedKey]);
 
   const reloadMonth = useCallback(() => {
     setRefreshTick((t) => t + 1);
@@ -421,11 +432,29 @@ export function PanelTurnosDashboard() {
             </p>
             <p className="mt-0.5 text-[14px] text-[var(--soft-gray)]/55">{dayLongFromKey(selectedKey)}</p>
           </div>
-          <div className="flex shrink-0 items-center gap-2 rounded-2xl border border-white/10 bg-[#171717] px-3 py-2 text-[13px] text-[var(--soft-gray)]/88">
-            <CalendarDays className="h-4 w-4 text-[var(--premium-gold)]" strokeWidth={1.75} />
-            <span className="font-semibold">
-              {dayRows.length} {dayRows.length === 1 ? "evento" : "eventos"}
-            </span>
+          <div className="flex shrink-0 items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setShowCancelled((v) => !v)}
+              className={[
+                "flex items-center gap-1.5 rounded-2xl border px-3 py-2 text-[13px] transition",
+                showCancelled
+                  ? "border-red-400/35 bg-red-500/12 text-red-200/95"
+                  : "border-white/10 bg-[#171717] text-[var(--soft-gray)]/88 hover:bg-[#1d1d1d]",
+              ].join(" ")}
+              aria-pressed={showCancelled}
+              aria-label={showCancelled ? "Ocultar canceladas" : "Mostrar canceladas"}
+              title={showCancelled ? "Ocultar canceladas" : "Mostrar canceladas"}
+            >
+              <span className="font-semibold">{cancelledCountSelectedDay}</span>
+              <span className="font-semibold">Canceladas</span>
+            </button>
+            <div className="flex items-center gap-1.5 rounded-2xl border border-white/10 bg-[#171717] px-3 py-2 text-[13px] text-[var(--soft-gray)]/88">
+              <CalendarDays className="h-4 w-4 text-[var(--premium-gold)]" strokeWidth={1.75} />
+              <span className="font-semibold">
+                {dayRows.length} {dayRows.length === 1 ? "evento" : "eventos"}
+              </span>
+            </div>
           </div>
         </div>
 
