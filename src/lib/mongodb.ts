@@ -16,14 +16,15 @@ function createClientPromise(): Promise<MongoClient> {
   return client.connect();
 }
 
+/**
+ * Una sola promesa de cliente por proceso (dev y prod).
+ * En Vercel/serverless evita abrir un MongoClient nuevo en cada `getDb()` y saturar Atlas.
+ */
 function getClientPromise(): Promise<MongoClient> {
-  if (process.env.NODE_ENV === "development") {
-    if (!globalForMongo._mongoClientPromise) {
-      globalForMongo._mongoClientPromise = createClientPromise();
-    }
-    return globalForMongo._mongoClientPromise;
+  if (!globalForMongo._mongoClientPromise) {
+    globalForMongo._mongoClientPromise = createClientPromise();
   }
-  return createClientPromise();
+  return globalForMongo._mongoClientPromise;
 }
 
 export async function getDb() {
