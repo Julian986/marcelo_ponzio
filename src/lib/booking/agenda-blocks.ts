@@ -159,10 +159,8 @@ export function buildEffectiveCapGetter(
     const c1 = expanded.chair1.some((iv) => instantInsideOpenInterval(iv, instantMs));
     const c2 = expanded.chair2.some((iv) => instantInsideOpenInterval(iv, instantMs));
     const chairsTaken = (c1 ? 1 : 0) + (c2 ? 1 : 0);
-    if (base === 1) {
-      return chairsTaken > 0 ? 0 : 1;
-    }
-    return Math.max(0, 2 - chairsTaken);
+    // Respeta `base` (3 en 9:00–11:30, 2 fuera, 1 en bordes): cada silla bloqueada resta 1 cupo.
+    return Math.max(0, base - chairsTaken);
   };
 }
 
