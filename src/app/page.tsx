@@ -44,34 +44,34 @@ function SplashScreen({ onLogoReady }: { onLogoReady: () => void }) {
 function HomeContent() {
   return (
     <div className="flex min-h-screen flex-col bg-white text-[#212121]">
-      <main className="mx-auto w-full max-w-md flex-grow px-6 pt-8 pb-32">
-        <h1 className="sr-only">Marcelo Ponzio Estilista</h1>
+      <h1 className="sr-only">Marcelo Ponzio Estilista</h1>
 
-        <section className="relative mb-12 overflow-hidden rounded-[40px] bg-white shadow-sm">
-          <div className="relative h-[450px] w-full">
-            <Image
-              src={HOME_HERO_IMAGE_URL}
-              alt="Marcelo Ponzio Estilista"
-              fill
-              priority
-              fetchPriority="high"
-              sizes="(max-width: 448px) 100vw, 448px"
-              quality={85}
-              className="object-cover object-top"
-            />
-            <div aria-hidden className="hero-gradient-overlay absolute inset-0" />
-          </div>
+      <section className="relative w-full shrink-0">
+        <div className="relative h-[min(48vh,440px)] min-h-[280px] w-full">
+          <Image
+            src={HOME_HERO_IMAGE_URL}
+            alt="Interior del salón Marcelo Ponzio Estilista"
+            fill
+            priority
+            fetchPriority="high"
+            sizes="100vw"
+            quality={85}
+            className="object-cover object-[center_35%]"
+          />
+          <div aria-hidden className="hero-gradient-overlay absolute inset-0" />
+        </div>
 
-          <div className="absolute right-0 bottom-6 left-0 px-4 text-center">
-            <p className="gold-text-gradient font-heading text-[32px] leading-tight font-bold tracking-wide uppercase">
-              Marcelo Ponzio
-              <br />
-              Estilista
-            </p>
-            <p className="mt-2 text-lg font-normal tracking-widest text-gray-700">Color · Corte · Peinado</p>
-          </div>
-        </section>
+        <div className="px-6 pt-5 pb-2 text-center">
+          <p className="gold-text-gradient font-heading text-[32px] leading-tight font-bold tracking-wide uppercase">
+            Marcelo Ponzio
+            <br />
+            Estilista
+          </p>
+          <p className="mt-2 text-lg font-normal tracking-widest text-gray-700">Color · Corte · Peinado</p>
+        </div>
+      </section>
 
+      <main className="mx-auto w-full max-w-md flex-grow px-6 pt-4 pb-32">
         <section className="space-y-6">
           <Link
             href="/turnos"
