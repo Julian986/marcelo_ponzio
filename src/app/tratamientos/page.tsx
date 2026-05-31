@@ -103,9 +103,9 @@ export default function TreatmentsPage() {
               Inicio
             </span>
           </Link>
-          <Link href="/tratamientos" className="flex min-w-0 flex-1 flex-col items-center gap-1">
-            <Sparkles className="h-5 w-5 text-[var(--premium-gold)]" strokeWidth={1.8} />
-            <span className="text-[9px] tracking-[0.12em] text-[var(--premium-gold)]">
+          <Link href="/tratamientos" className="flex min-w-0 flex-1 flex-col items-center gap-1 rounded-xl bg-[var(--accent-coral)] py-1.5 text-white">
+            <Sparkles className="h-5 w-5 text-white" strokeWidth={1.8} />
+            <span className="text-[9px] tracking-[0.12em] text-white">
               Tratamientos
             </span>
           </Link>

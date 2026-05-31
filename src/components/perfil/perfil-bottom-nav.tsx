@@ -20,16 +20,23 @@ export function PerfilBottomNav() {
       <div className="flex w-full items-center justify-between border-t border-white/8 bg-black/60 px-4 py-2.5 backdrop-blur-[16px]">
         {nav.map(({ href, label, Icon, activeMatch }) => {
           const active = activeMatch(pathname);
+          const isTratamientos = href === "/tratamientos";
           return (
             <Link
               key={href}
               href={href}
               className={`flex min-w-0 flex-1 cursor-pointer flex-col items-center gap-1 ${
-                active ? "text-[var(--premium-gold)]" : "text-[var(--soft-gray)]/80"
+                isTratamientos
+                  ? "rounded-xl bg-[var(--accent-coral)] py-1.5 text-white"
+                  : active
+                    ? "text-[var(--premium-gold)]"
+                    : "text-[var(--soft-gray)]/80"
               }`}
             >
-              <Icon className="h-5 w-5" strokeWidth={1.8} />
-              <span className={`text-[9px] tracking-[0.12em] ${active ? "text-[var(--premium-gold)]" : ""}`}>
+              <Icon className={`h-5 w-5 ${isTratamientos ? "text-white" : ""}`} strokeWidth={1.8} />
+              <span
+                className={`text-[9px] tracking-[0.12em] ${isTratamientos || active ? (isTratamientos ? "text-white" : "text-[var(--premium-gold)]") : ""}`}
+              >
                 {label}
               </span>
             </Link>

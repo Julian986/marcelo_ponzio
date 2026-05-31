@@ -668,9 +668,9 @@ export default function TurnosClient({ initialTreatment = "" }: TurnosClientProp
             <HomeIcon className="h-5 w-5 text-[var(--soft-gray)]/90" strokeWidth={1.9} />
             <span className="text-[9px] tracking-[0.12em] text-[var(--soft-gray)]/80">Inicio</span>
           </Link>
-          <Link href="/tratamientos" className="flex min-w-0 flex-1 cursor-pointer flex-col items-center gap-1">
-            <Sparkles className="h-5 w-5 text-[var(--soft-gray)]/90" strokeWidth={1.8} />
-            <span className="text-[9px] tracking-[0.12em] text-[var(--soft-gray)]/80">Tratamientos</span>
+          <Link href="/tratamientos" className="flex min-w-0 flex-1 cursor-pointer flex-col items-center gap-1 rounded-xl bg-[var(--accent-coral)] py-1.5 text-white">
+            <Sparkles className="h-5 w-5 text-white" strokeWidth={1.8} />
+            <span className="text-[9px] tracking-[0.12em] text-white">Tratamientos</span>
           </Link>
           <Link href="/turnos" className="flex min-w-0 flex-1 cursor-pointer flex-col items-center gap-1">
             <CalendarDays className="h-5 w-5 text-[var(--premium-gold)]" strokeWidth={1.8} />

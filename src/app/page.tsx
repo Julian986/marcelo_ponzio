@@ -113,7 +113,7 @@ function HomeContent() {
               </Link>
               <Link
                 href="/tratamientos"
-                className="flex h-[52px] items-center justify-center rounded-full border border-white/8 bg-black/45 px-6 text-[15px] font-medium tracking-[0.14em] text-white backdrop-blur-[10px]"
+                className="flex h-[52px] items-center justify-center rounded-full bg-[var(--accent-coral)] px-6 text-[15px] font-medium tracking-[0.14em] text-white shadow-[0_16px_36px_rgba(0,0,0,0.45)]"
               >
                 Tratamientos
               </Link>
@@ -173,9 +173,9 @@ function HomeContent() {
               Inicio
             </span>
           </button>
-          <Link href="/tratamientos" className="flex min-w-0 flex-1 flex-col items-center gap-1 text-[var(--soft-gray)]/80">
-            <Sparkles className="h-5 w-5 text-[var(--soft-gray)]/90" strokeWidth={1.8} />
-            <span className="text-[9px] tracking-[0.12em]">
+          <Link href="/tratamientos" className="flex min-w-0 flex-1 flex-col items-center gap-1 rounded-xl bg-[var(--accent-coral)] py-1.5 text-white">
+            <Sparkles className="h-5 w-5 text-white" strokeWidth={1.8} />
+            <span className="text-[9px] tracking-[0.12em] text-white">
               Tratamientos
             </span>
           </Link>

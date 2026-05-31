@@ -136,9 +136,9 @@ export default function PromotionsPage() {
               Inicio
             </span>
           </Link>
-          <Link href="/tratamientos" className="flex min-w-0 flex-1 flex-col items-center gap-1 text-[var(--soft-gray)]/80">
-            <Sparkles className="h-5 w-5 text-[var(--soft-gray)]/90" strokeWidth={1.8} />
-            <span className="text-[9px] tracking-[0.12em]">Tratamientos</span>
+          <Link href="/tratamientos" className="flex min-w-0 flex-1 flex-col items-center gap-1 rounded-xl bg-[var(--accent-coral)] py-1.5 text-white">
+            <Sparkles className="h-5 w-5 text-white" strokeWidth={1.8} />
+            <span className="text-[9px] tracking-[0.12em] text-white">Tratamientos</span>
           </Link>
           <Link href="/turnos" className="flex min-w-0 flex-1 flex-col items-center gap-1 text-[var(--soft-gray)]/80">
             <CalendarDays className="h-5 w-5 text-[var(--soft-gray)]/90" strokeWidth={1.8} />
