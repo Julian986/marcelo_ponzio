@@ -2,7 +2,7 @@ import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import type { ReactNode } from "react";
 
-import { BookingWizardNav } from "@/components/booking/booking-wizard-nav";
+import { AppBottomNav } from "@/components/app-bottom-nav";
 
 type BookingWizardShellProps = {
   onBack: () => void;
@@ -53,25 +53,24 @@ export function BookingWizardShell({
 
       <main className="flex-1 overflow-y-auto px-5 pt-8 pb-44">{children}</main>
 
-      <div className="fixed right-0 bottom-0 left-0 z-50 border-t border-gray-100 bg-white pb-[env(safe-area-inset-bottom)]">
-        {!hideContinue ? (
-          <div className="px-5 pt-4 pb-2">
-            <button
-              type="button"
-              disabled={continueDisabled || continueLoading}
-              onClick={onContinue}
-              className={`w-full rounded-[30px] py-4 text-lg font-semibold text-white shadow-lg transition-transform ${
-                continueDisabled || continueLoading
-                  ? "cursor-not-allowed bg-gray-300"
-                  : "cursor-pointer bg-[#B88E2F] active:scale-95"
-              } ${continueLoading ? "cursor-wait opacity-80" : ""}`}
-            >
-              {continueLabel}
-            </button>
-          </div>
-        ) : null}
-        <BookingWizardNav />
-      </div>
+      {!hideContinue ? (
+        <div className="fixed inset-x-0 z-40 border-t border-gray-100 bg-white px-5 pt-3 pb-2 bottom-[calc(4rem+env(safe-area-inset-bottom,0px))]">
+          <button
+            type="button"
+            disabled={continueDisabled || continueLoading}
+            onClick={onContinue}
+            className={`w-full rounded-[30px] py-4 text-lg font-semibold text-white shadow-lg transition-transform ${
+              continueDisabled || continueLoading
+                ? "cursor-not-allowed bg-gray-300"
+                : "cursor-pointer bg-[#B88E2F] active:scale-95"
+            } ${continueLoading ? "cursor-wait opacity-80" : ""}`}
+          >
+            {continueLabel}
+          </button>
+        </div>
+      ) : null}
+
+      <AppBottomNav />
     </div>
   );
 }

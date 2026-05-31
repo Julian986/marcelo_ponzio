@@ -1,8 +1,8 @@
 "use client";
 
 import { BrandLogo } from "@/components/brand-logo";
+import { AppBottomNav } from "@/components/app-bottom-nav";
 import { HOME_HERO_IMAGE_URL } from "@/lib/home-hero-image";
-import { CalendarDays, Home as HomeIcon, Percent, Sparkles, User } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
@@ -106,33 +106,7 @@ function HomeContent() {
         </section>
       </main>
 
-      <nav className="fixed right-0 bottom-0 left-0 z-50 border-t border-gray-100 bg-white pb-[env(safe-area-inset-bottom)]">
-        <div className="mx-auto flex h-16 max-w-md items-center justify-between px-4">
-          <span className="flex min-w-0 flex-1 flex-col items-center gap-1 text-[#B8860B]">
-            <HomeIcon className="h-6 w-6" strokeWidth={1.9} />
-            <span className="text-[10px] font-semibold tracking-[0.06em]">Inicio</span>
-          </span>
-          <Link
-            href="/tratamientos"
-            className="flex min-w-0 flex-1 flex-col items-center gap-1 text-gray-400"
-          >
-            <Sparkles className="h-6 w-6" strokeWidth={1.8} />
-            <span className="text-[10px] font-medium tracking-[0.06em]">Tratamientos</span>
-          </Link>
-          <Link href="/turnos" className="flex min-w-0 flex-1 flex-col items-center gap-1 text-gray-400">
-            <CalendarDays className="h-6 w-6" strokeWidth={1.8} />
-            <span className="text-[10px] font-medium tracking-[0.06em]">Turnos</span>
-          </Link>
-          <Link href="/promociones" className="flex min-w-0 flex-1 flex-col items-center gap-1 text-gray-400">
-            <Percent className="h-6 w-6" strokeWidth={1.8} />
-            <span className="text-[10px] font-medium tracking-[0.06em]">Promos</span>
-          </Link>
-          <Link href="/perfil" className="flex min-w-0 flex-1 flex-col items-center gap-1 text-gray-400">
-            <User className="h-6 w-6" strokeWidth={1.8} />
-            <span className="text-[10px] font-medium tracking-[0.06em]">Perfil</span>
-          </Link>
-        </div>
-      </nav>
+      <AppBottomNav />
     </div>
   );
 }

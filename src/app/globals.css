@@ -36,6 +36,33 @@ body {
   font-family: var(--font-playfair), serif;
 }
 
+/* Nav inferior — tamaños fijos en px, independientes del contexto de cada página */
+.app-bottom-nav {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+.app-bottom-nav__inner {
+  font-size: 16px;
+  line-height: normal;
+}
+
+.app-bottom-nav__icon {
+  width: 24px;
+  height: 24px;
+  flex-shrink: 0;
+}
+
+.app-bottom-nav__label {
+  display: block;
+  font-family: var(--font-montserrat), sans-serif;
+  font-size: 10px !important;
+  line-height: 10px !important;
+  font-weight: 500 !important;
+  letter-spacing: 0.06em;
+  white-space: nowrap;
+}
+
 /* Home — Luxury Light hero */
 .hero-gradient-overlay {
   background: linear-gradient(
