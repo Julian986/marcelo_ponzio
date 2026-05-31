@@ -47,7 +47,7 @@ function HomeContent() {
       <h1 className="sr-only">Marcelo Ponzio Estilista</h1>
 
       <section className="relative w-full shrink-0">
-        <div className="relative h-[min(48vh,440px)] min-h-[280px] w-full">
+        <div className="relative h-[min(48vh,440px)] min-h-[280px] w-full md:hidden">
           <Image
             src={HOME_HERO_IMAGE_URL}
             alt="Interior del salón Marcelo Ponzio Estilista"
@@ -61,7 +61,7 @@ function HomeContent() {
           <div aria-hidden className="hero-gradient-overlay absolute inset-0" />
         </div>
 
-        <div className="px-6 pt-5 pb-2 text-center">
+        <div className="px-6 pt-5 pb-2 text-center md:pt-12">
           <p className="gold-text-gradient font-heading text-[32px] leading-tight font-bold tracking-wide uppercase">
             Marcelo Ponzio
             <br />
