@@ -1,13 +1,13 @@
 "use client";
 
-import { CalendarDays, Home as HomeIcon, Palette, Percent, Scissors, Sparkles, User } from "lucide-react";
+import { Palette, Percent, Scissors, Sparkles } from "lucide-react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { useMemo, useState } from "react";
 
-import {
-  TREATMENT_CATEGORIES,
-  type TreatmentCategory,
-} from "@/lib/treatments/catalog";
+import { AppBottomNav } from "@/components/app-bottom-nav";
+import { LightPageHeader } from "@/components/light-page-header";
+import { TREATMENT_CATEGORIES, type TreatmentCategory } from "@/lib/treatments/catalog";
 
 type Promo = {
   id: string;
@@ -49,13 +49,15 @@ const promos: Promo[] = [
 ];
 
 function CategoryIcon({ category }: { category: TreatmentCategory }) {
-  const cls = "h-8 w-8 text-[var(--premium-gold)]";
+  const cls = "h-8 w-8 text-[#B88E2F]";
   if (category === "Cortes y peinado") return <Scissors className={cls} strokeWidth={1.9} />;
   if (category === "Color") return <Palette className={cls} strokeWidth={1.9} />;
   return <Sparkles className={cls} strokeWidth={1.9} />;
 }
 
 export default function PromotionsPage() {
+  const searchParams = useSearchParams();
+  const fromPerfil = searchParams.get("from") === "perfil";
   const [activeCategory, setActiveCategory] = useState<TreatmentCategory>("Cortes y peinado");
 
   const filteredPromos = useMemo(
@@ -64,23 +66,27 @@ export default function PromotionsPage() {
   );
 
   return (
-    <div className="min-h-screen bg-[#111111] text-white">
-      <main className="mx-auto w-full max-w-md px-4 pt-6 pb-24">
-        <header className="mb-4 text-center">
-          <h1 className="text-[34px] leading-none font-heading">Promociones</h1>
-        </header>
+    <div className="min-h-screen bg-white text-gray-900">
+      <main className="mx-auto w-full max-w-md px-5 pt-10 pb-28">
+        <LightPageHeader
+          title="Promociones"
+          subtitle="Beneficios exclusivos para vos"
+          backHref={fromPerfil ? "/perfil" : undefined}
+          backLabel="Volver al perfil"
+        />
 
-        <section className="mb-4 flex items-center gap-2 overflow-x-auto pb-1">
+        <section className="mb-5 flex items-center gap-2 overflow-x-auto pb-1">
           {TREATMENT_CATEGORIES.map((category) => {
             const isActive = category === activeCategory;
             return (
               <button
                 key={category}
+                type="button"
                 onClick={() => setActiveCategory(category)}
-                className={`shrink-0 rounded-full px-4 py-1.5 text-sm transition-colors ${
+                className={`shrink-0 rounded-full border px-4 py-2 text-[15px] font-medium transition-colors ${
                   isActive
-                    ? "bg-[#2a2a2a] text-[var(--soft-gray)]"
-                    : "bg-transparent text-[var(--soft-gray)]/70"
+                    ? "border-[#B88E2F] bg-[#B88E2F]/12 text-gray-900"
+                    : "border-gray-200 bg-white text-gray-500"
                 }`}
               >
                 {category}
@@ -89,38 +95,32 @@ export default function PromotionsPage() {
           })}
         </section>
 
-        <section className="space-y-3">
+        <section className="space-y-4">
           {filteredPromos.map((promo) => (
             <article
               key={promo.id}
-              className="relative overflow-hidden rounded-2xl border border-white/8 bg-[#1a1a1a] shadow-[0_10px_24px_rgba(0,0,0,0.45)]"
+              className="overflow-hidden rounded-[24px] border border-gray-50 bg-white shadow-[0_4px_20px_rgba(0,0,0,0.05)]"
             >
-              <div className="absolute inset-0 grid grid-cols-[47%_53%]">
-                <div className="relative flex min-h-[148px] flex-col overflow-hidden border-r border-white/6 bg-[#141414]">
-                  <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_16%,rgba(228,202,105,0.22),transparent_44%),linear-gradient(135deg,#191919_0%,#111111_62%,#0e0e0e_100%)]" />
-                  <div className="relative z-10 flex flex-1 flex-col items-center justify-center gap-2">
-                    <CategoryIcon category={promo.category} />
-                    <span className="text-[10px] tracking-[0.12em] text-[var(--soft-gray)]/68">
-                      PROMO
-                    </span>
-                  </div>
+              <div className="flex gap-0">
+                <div className="flex w-[38%] shrink-0 flex-col items-center justify-center gap-2 bg-[#F5F5F5] px-3 py-6">
+                  <CategoryIcon category={promo.category} />
+                  <span className="flex items-center gap-1 text-[11px] font-semibold tracking-wide text-[#B88E2F] uppercase">
+                    <Percent className="h-3.5 w-3.5" strokeWidth={2} />
+                    Promo
+                  </span>
                 </div>
-                <div className="min-h-[148px] bg-[linear-gradient(180deg,#f4ecdd_0%,#eadfc9_100%)]" />
-              </div>
-
-              <div className="relative z-10 ml-auto flex w-[53%] flex-col px-3 py-3">
-                <h2 className="text-[22px] leading-tight font-heading text-[#1b1916] sm:text-[26px]">
-                  {promo.title}
-                </h2>
-                <p className="mt-1 text-[11px] text-[#2c2922]/80">{promo.subtitle}</p>
-                <p className="mt-1 text-[11px] leading-tight text-[#2c2922]/90">{promo.details}</p>
-                <div className="mt-3">
-                  <Link
-                    href={`/turnos?treatment=${encodeURIComponent(promo.title)}`}
-                    className="flex h-9 w-full items-center justify-center rounded-full bg-gradient-to-r from-[var(--accent-orange)] to-[var(--premium-gold)] text-[13px] font-medium text-white"
-                  >
-                    Reservar
-                  </Link>
+                <div className="flex flex-1 flex-col justify-center px-4 py-4">
+                  <h2 className="text-[22px] leading-tight font-heading font-bold text-gray-900">{promo.title}</h2>
+                  <p className="mt-1 text-[15px] text-gray-600">{promo.subtitle}</p>
+                  <p className="mt-1 text-[14px] text-gray-500">{promo.details}</p>
+                  <div className="mt-4">
+                    <Link
+                      href={`/turnos?treatment=${encodeURIComponent(promo.title)}`}
+                      className="flex h-10 w-full items-center justify-center rounded-full bg-[#B88E2F] text-[15px] font-semibold text-white shadow-md transition active:scale-[0.98]"
+                    >
+                      Reservar
+                    </Link>
+                  </div>
                 </div>
               </div>
             </article>
@@ -128,32 +128,7 @@ export default function PromotionsPage() {
         </section>
       </main>
 
-      <nav className="fixed right-0 bottom-0 left-0 z-30">
-        <div className="flex w-full items-center justify-between border-t border-white/8 bg-black/60 px-4 py-2.5 backdrop-blur-[16px]">
-          <Link href="/" className="flex min-w-0 flex-1 flex-col items-center gap-1">
-            <HomeIcon className="h-5 w-5 text-[var(--soft-gray)]/90" strokeWidth={1.9} />
-            <span className="text-[9px] tracking-[0.12em] text-[var(--soft-gray)]/80">
-              Inicio
-            </span>
-          </Link>
-          <Link href="/tratamientos" className="flex min-w-0 flex-1 flex-col items-center gap-1 rounded-xl bg-[var(--accent-coral)] py-1.5 text-white">
-            <Sparkles className="h-5 w-5 text-white" strokeWidth={1.8} />
-            <span className="text-[9px] tracking-[0.12em] text-white">Tratamientos</span>
-          </Link>
-          <Link href="/turnos" className="flex min-w-0 flex-1 flex-col items-center gap-1 text-[var(--soft-gray)]/80">
-            <CalendarDays className="h-5 w-5 text-[var(--soft-gray)]/90" strokeWidth={1.8} />
-            <span className="text-[9px] tracking-[0.12em]">Turnos</span>
-          </Link>
-          <Link href="/promociones" className="flex min-w-0 flex-1 flex-col items-center gap-1">
-            <Percent className="h-5 w-5 text-[var(--premium-gold)]" strokeWidth={1.8} />
-            <span className="text-[9px] tracking-[0.12em] text-[var(--premium-gold)]">Promos</span>
-          </Link>
-          <Link href="/perfil" className="flex min-w-0 flex-1 flex-col items-center gap-1 text-[var(--soft-gray)]/80">
-            <User className="h-5 w-5 text-[var(--soft-gray)]/90" strokeWidth={1.8} />
-            <span className="text-[9px] tracking-[0.12em]">Perfil</span>
-          </Link>
-        </div>
-      </nav>
+      <AppBottomNav />
     </div>
   );
 }

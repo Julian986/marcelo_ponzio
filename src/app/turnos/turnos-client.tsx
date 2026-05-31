@@ -1,5 +1,6 @@
 ﻿"use client";
 
+import { Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
@@ -138,6 +139,21 @@ export default function TurnosClient({ initialTreatment = "" }: TurnosClientProp
       return next;
     });
   }, []);
+
+  const clearSelectedServices = useCallback(() => {
+    setSelectedServiceIds([]);
+    setSelectedTreatmentId("");
+    setSelectedDate("");
+    setSelectedTime("");
+    setServiceLimitHint(null);
+  }, []);
+
+  const handleClearSelectedServices = useCallback(() => {
+    if (selectedServiceIds.length >= 3 && !window.confirm("¿Quitar todos los servicios seleccionados?")) {
+      return;
+    }
+    clearSelectedServices();
+  }, [clearSelectedServices, selectedServiceIds.length]);
 
   const handleWizardBack = useCallback(() => {
     if (wizardStep <= 1) {
@@ -501,11 +517,21 @@ export default function TurnosClient({ initialTreatment = "" }: TurnosClientProp
   const summaryBar =
     wizardStep === 1 ? (
       <>
-        <span className="text-sm font-medium text-gray-700">
+        <span className="min-w-0 flex-1 text-sm font-medium text-gray-700">
           {selectedServiceIds.length} seleccionado{selectedServiceIds.length === 1 ? "" : "s"} · Duración{" "}
           {totalSelectedDurationMinutes} min
         </span>
-        <div className="h-1.5 w-6 rounded-full bg-[#B88E2F]" />
+        {selectedServiceIds.length > 0 ? (
+          <button
+            type="button"
+            onClick={handleClearSelectedServices}
+            aria-label="Limpiar selección"
+            title="Limpiar selección"
+            className="flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center rounded-xl border border-gray-200 bg-white text-gray-500 transition hover:bg-gray-50 hover:text-gray-700"
+          >
+            <Trash2 className="h-4 w-4" strokeWidth={2} />
+          </button>
+        ) : null}
       </>
     ) : wizardStep === 2 ? (
       <>

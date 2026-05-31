@@ -1,9 +1,12 @@
 "use client";
 
-import { CalendarDays, Home as HomeIcon, Palette, Percent, Scissors, Sparkles, User } from "lucide-react";
+import { Palette, Scissors, Sparkles } from "lucide-react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { useMemo, useState } from "react";
 
+import { AppBottomNav } from "@/components/app-bottom-nav";
+import { LightPageHeader } from "@/components/light-page-header";
 import {
   SALON_TREATMENTS,
   TREATMENT_CATEGORIES,
@@ -11,13 +14,15 @@ import {
 } from "@/lib/treatments/catalog";
 
 function CategoryIcon({ category }: { category: TreatmentCategory }) {
-  const cls = "h-7 w-7 text-[var(--premium-gold)]";
+  const cls = "h-8 w-8 text-[#B88E2F]";
   if (category === "Cortes y peinado") return <Scissors className={cls} strokeWidth={1.9} />;
   if (category === "Color") return <Palette className={cls} strokeWidth={1.9} />;
   return <Sparkles className={cls} strokeWidth={1.9} />;
 }
 
 export default function TreatmentsPage() {
+  const searchParams = useSearchParams();
+  const fromPerfil = searchParams.get("from") === "perfil";
   const [activeCategory, setActiveCategory] = useState<TreatmentCategory>("Cortes y peinado");
 
   const filteredServices = useMemo(
@@ -26,29 +31,31 @@ export default function TreatmentsPage() {
   );
 
   return (
-    <div className="min-h-screen bg-[#111111] text-white">
-      <main className="mx-auto w-full max-w-md px-4 pt-6 pb-24">
-        <header className="mb-4 text-center">
-          <h1 className="text-[34px] leading-none font-heading">Servicios</h1>
-        </header>
+    <div className="min-h-screen bg-white text-gray-900">
+      <main className="mx-auto w-full max-w-md px-5 pt-10 pb-28">
+        <LightPageHeader
+          title="Servicios"
+          subtitle="Conocé nuestros tratamientos de lujo"
+          backHref={fromPerfil ? "/perfil" : undefined}
+          backLabel="Volver al perfil"
+        />
 
-        <p className="mb-3 text-center text-[11px] leading-relaxed text-[var(--soft-gray)]/85">
-          En todos los servicios el lavado está incluido. Keratina y tratamiento aminoácidos incluyen
-          también el peinado.
+        <p className="mb-5 text-[16px] leading-relaxed text-gray-600">
+          En todos los servicios el lavado está incluido. Keratina y aminoácidos incluyen también el peinado.
         </p>
 
-        <section className="mb-2 flex items-center gap-2 overflow-x-auto pb-1">
+        <section className="mb-5 flex items-center gap-2 overflow-x-auto pb-1">
           {TREATMENT_CATEGORIES.map((category) => {
             const isActive = category === activeCategory;
-
             return (
               <button
                 key={category}
+                type="button"
                 onClick={() => setActiveCategory(category)}
-                className={`shrink-0 rounded-full px-4 py-1.5 text-sm transition-colors ${
+                className={`shrink-0 rounded-full border px-4 py-2 text-[15px] font-medium transition-colors ${
                   isActive
-                    ? "bg-[#2a2a2a] text-[var(--soft-gray)]"
-                    : "bg-transparent text-[var(--soft-gray)]/70"
+                    ? "border-[#B88E2F] bg-[#B88E2F]/12 text-gray-900"
+                    : "border-gray-200 bg-white text-gray-500"
                 }`}
               >
                 {category}
@@ -57,34 +64,25 @@ export default function TreatmentsPage() {
           })}
         </section>
 
-        <section className="grid grid-cols-2 gap-3">
+        <section className="grid grid-cols-2 gap-4">
           {filteredServices.map((service) => (
             <article
               key={service.id}
-              className="flex h-full min-h-0 flex-col overflow-hidden rounded-2xl border border-white/8 bg-[#1a1a1a] shadow-[0_8px_22px_rgba(0,0,0,0.45)]"
+              className="flex h-full min-h-0 flex-col overflow-hidden rounded-[24px] border border-gray-50 bg-white shadow-[0_4px_20px_rgba(0,0,0,0.05)]"
             >
-              <div className="relative h-32 shrink-0 overflow-hidden bg-[#141414]">
-                <div className="absolute inset-0 bg-[radial-gradient(circle_at_18%_18%,rgba(228,202,105,0.22),transparent_46%),linear-gradient(135deg,#191919_0%,#131313_58%,#0f0f0f_100%)]" />
-                <div className="absolute inset-0 bg-[linear-gradient(to_bottom,rgba(255,255,255,0.04),rgba(255,255,255,0))]" />
-                <div className="relative z-10 flex h-full items-center justify-center">
-                  <CategoryIcon category={service.category} />
-                </div>
-                <div className="pointer-events-none absolute right-0 bottom-0 left-0 h-16 bg-gradient-to-b from-transparent to-[#1a1a1a]" />
+              <div className="relative flex h-28 shrink-0 items-center justify-center bg-[#F5F5F5]">
+                <CategoryIcon category={service.category} />
               </div>
 
-              <div className="relative z-10 -mt-2 flex min-h-0 flex-1 flex-col px-3 pt-0 pb-3">
-                <h2 className="text-[17px] leading-tight font-heading">{service.name}</h2>
-                <p className="mt-1 line-clamp-3 text-[11px] leading-tight text-[var(--soft-gray)]/80">
-                  {service.description}
-                </p>
-                <p className="mt-1 text-[10px] tracking-[0.08em] text-[var(--soft-gray)]/65">
-                  Duración: {service.durationLabel}
-                </p>
+              <div className="flex min-h-0 flex-1 flex-col px-3 pb-3 pt-2">
+                <h2 className="text-[17px] font-semibold leading-tight font-heading text-gray-900">{service.name}</h2>
+                <p className="mt-1 line-clamp-3 text-[14px] leading-snug text-gray-500">{service.description}</p>
+                <p className="mt-1 text-[13px] font-medium text-gray-400">Duración: {service.durationLabel}</p>
 
-                <div className="mt-auto pt-2">
+                <div className="mt-auto pt-3">
                   <Link
                     href={`/turnos?treatment=${encodeURIComponent(service.name)}`}
-                    className="flex h-8 w-full items-center justify-center rounded-full bg-gradient-to-r from-[var(--accent-orange)] to-[var(--premium-gold)] text-[14px] font-medium text-white"
+                    className="flex h-10 w-full items-center justify-center rounded-full bg-[#B88E2F] text-[15px] font-semibold text-white shadow-md transition active:scale-[0.98]"
                   >
                     Reservar
                   </Link>
@@ -95,34 +93,7 @@ export default function TreatmentsPage() {
         </section>
       </main>
 
-      <nav className="fixed right-0 bottom-0 left-0 z-30">
-        <div className="flex w-full items-center justify-between border-t border-white/8 bg-black/60 px-4 py-2.5 backdrop-blur-[16px]">
-          <Link href="/" className="flex min-w-0 flex-1 flex-col items-center gap-1">
-            <HomeIcon className="h-5 w-5 text-[var(--soft-gray)]/90" strokeWidth={1.9} />
-            <span className="text-[9px] tracking-[0.12em] text-[var(--soft-gray)]/80">
-              Inicio
-            </span>
-          </Link>
-          <Link href="/tratamientos" className="flex min-w-0 flex-1 flex-col items-center gap-1 rounded-xl bg-[var(--accent-coral)] py-1.5 text-white">
-            <Sparkles className="h-5 w-5 text-white" strokeWidth={1.8} />
-            <span className="text-[9px] tracking-[0.12em] text-white">
-              Tratamientos
-            </span>
-          </Link>
-          <Link href="/turnos" className="flex min-w-0 flex-1 flex-col items-center gap-1 text-[var(--soft-gray)]/80">
-            <CalendarDays className="h-5 w-5 text-[var(--soft-gray)]/90" strokeWidth={1.8} />
-            <span className="text-[9px] tracking-[0.12em]">Turnos</span>
-          </Link>
-          <Link href="/promociones" className="flex min-w-0 flex-1 flex-col items-center gap-1 text-[var(--soft-gray)]/80">
-            <Percent className="h-5 w-5 text-[var(--soft-gray)]/90" strokeWidth={1.8} />
-            <span className="text-[9px] tracking-[0.12em]">Promos</span>
-          </Link>
-          <Link href="/perfil" className="flex min-w-0 flex-1 flex-col items-center gap-1 text-[var(--soft-gray)]/80">
-            <User className="h-5 w-5 text-[var(--soft-gray)]/90" strokeWidth={1.8} />
-            <span className="text-[9px] tracking-[0.12em]">Perfil</span>
-          </Link>
-        </div>
-      </nav>
+      <AppBottomNav />
     </div>
   );
 }
