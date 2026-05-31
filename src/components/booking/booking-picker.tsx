@@ -14,6 +14,7 @@ import {
   salonWeekdayLabels,
 } from "@/lib/booking/salon-availability";
 import { isArgentinaPublicHoliday } from "@/lib/booking/argentina-holidays";
+import { minPublicBookableDateKey } from "@/lib/booking/public-slot-lead";
 
 export type BookingPickerProps = {
   selectedTreatmentId: string;
@@ -74,7 +75,11 @@ export function BookingPicker({
 }: BookingPickerProps) {
   const [visibleMonthDate, setVisibleMonthDate] = useState(() => {
     const today = new Date();
-    return new Date(today.getFullYear(), today.getMonth(), 1);
+    if (bookingContext === "panel") {
+      return new Date(today.getFullYear(), today.getMonth(), 1);
+    }
+    const [y, m] = minPublicBookableDateKey(today).split("-").map(Number);
+    return new Date(y, m - 1, 1);
   });
   /** `undefined`: sin servicio o sin datos; `null`: cargando; objeto: hay al menos un hueco ese día para el servicio. */
   const [monthAvailability, setMonthAvailability] = useState<Record<string, boolean> | null | undefined>(undefined);
