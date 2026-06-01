@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useMemo, useState } from "react";
 
+import { TrackedLink } from "@/components/analytics/tracked-link";
 import { AppBottomNav } from "@/components/app-bottom-nav";
 import { LightPageHeader } from "@/components/light-page-header";
 import { TREATMENT_CATEGORIES, type TreatmentCategory } from "@/lib/treatments/catalog";
@@ -114,12 +115,14 @@ export function PromocionesClient() {
                   <p className="mt-1 text-[15px] text-gray-600">{promo.subtitle}</p>
                   <p className="mt-1 text-[14px] text-gray-500">{promo.details}</p>
                   <div className="mt-4">
-                    <Link
+                    <TrackedLink
                       href={`/turnos?treatment=${encodeURIComponent(promo.title)}`}
+                      trackAction="reservar_turno"
+                      trackLabel="promociones"
                       className="flex h-10 w-full items-center justify-center rounded-full bg-[#B88E2F] text-[15px] font-semibold text-white shadow-md transition active:scale-[0.98]"
                     >
                       Reservar
-                    </Link>
+                    </TrackedLink>
                   </div>
                 </div>
               </div>

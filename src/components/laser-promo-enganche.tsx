@@ -5,6 +5,8 @@ import Image from "next/image";
 import Link from "next/link";
 import { useState } from "react";
 
+import { trackEvent, trackReservarTurno } from "@/lib/analytics/track";
+
 const FLYER_SRC = "/flyer.jpeg";
 
 const WHATSAPP_LASER =
@@ -80,6 +82,7 @@ export function LaserPromoEnganche() {
       <div className="flex flex-col gap-2 p-4 pt-3">
         <Link
           href="/turnos?treatment=depilacion-laser"
+          onClick={() => trackReservarTurno("laser_promo")}
           className="flex h-10 w-full items-center justify-center rounded-full bg-gradient-to-r from-[var(--accent-orange)] to-[var(--premium-gold)] text-[14px] font-medium text-white shadow-[0_6px_20px_rgba(228,202,105,0.28)]"
         >
           Reservar turno
@@ -88,6 +91,9 @@ export function LaserPromoEnganche() {
           href={WHATSAPP_LASER}
           target="_blank"
           rel="noopener noreferrer"
+          onClick={() =>
+            trackEvent({ action: "whatsapp_click", category: "cta", label: "laser_promo" })
+          }
           className="flex h-10 w-full items-center justify-center rounded-full border border-white/14 bg-white/5 text-[13px] font-medium text-[var(--soft-gray)] transition hover:border-[var(--premium-gold)]/35 hover:bg-white/[0.07]"
         >
           Consultar por WhatsApp

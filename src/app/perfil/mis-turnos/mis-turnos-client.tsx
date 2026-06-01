@@ -5,7 +5,9 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
+import { TrackedLink } from "@/components/analytics/tracked-link";
 import { usePerfilSession } from "@/components/perfil/perfil-session-provider";
+import { trackEvent } from "@/lib/analytics/track";
 import type { CustomerReservationPublic } from "@/lib/reservations/customer-public-serialize";
 import { isUpcomingReservation } from "@/lib/reservations/customer-public-serialize";
 import { reservationStatusLabel } from "@/lib/reservations/customer-ui-copy";
@@ -80,6 +82,11 @@ export function MisTurnosClient() {
           setError(data.error ?? "No se pudo cancelar el turno.");
           return;
         }
+        trackEvent({
+          action: "cancel_appointment",
+          category: "appointments",
+          label: "mis_turnos",
+        });
         await ctxReload();
         setSuccessMessage("Turno cancelado con éxito.");
       } catch {
@@ -150,12 +157,14 @@ export function MisTurnosClient() {
             {tab === "upcoming" ? "No tenés turnos próximos." : "No hay turnos pasados para mostrar."}
           </p>
           {tab === "upcoming" ? (
-            <Link
+            <TrackedLink
               href="/turnos"
+              trackAction="reservar_turno"
+              trackLabel="mis_turnos_empty"
               className="inline-flex h-12 items-center rounded-full bg-[#B88E2F] px-6 text-[16px] font-semibold text-white shadow-md transition active:scale-[0.98]"
             >
               Reservar nuevo turno
-            </Link>
+            </TrackedLink>
           ) : null}
         </div>
       ) : (
@@ -215,12 +224,14 @@ export function MisTurnosClient() {
 
       {me === "authed" && list.length > 0 ? (
         <div className="fixed bottom-24 left-1/2 z-40 -translate-x-1/2">
-          <Link
+          <TrackedLink
             href="/turnos"
+            trackAction="reservar_turno"
+            trackLabel="mis_turnos_fab"
             className="inline-flex h-11 items-center rounded-full bg-[#B88E2F] px-6 text-[15px] font-semibold text-white shadow-lg transition active:scale-[0.98]"
           >
             + Reservar turno
-          </Link>
+          </TrackedLink>
         </div>
       ) : null}
 

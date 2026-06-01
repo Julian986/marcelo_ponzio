@@ -4,31 +4,41 @@ import Script from "next/script";
 import { usePathname, useSearchParams } from "next/navigation";
 import { Suspense, useEffect } from "react";
 
-import { GA_MEASUREMENT_ID, pageview as gaPageview } from "@/lib/gtag";
+import {
+  GA_MEASUREMENT_ID,
+  isAnalyticsDebugMode,
+  pageview,
+} from "@/lib/analytics/client";
 
 function GoogleAnalyticsPageView() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
 
   useEffect(() => {
-    if (process.env.NODE_ENV !== "production" || !GA_MEASUREMENT_ID) return;
+    if (!GA_MEASUREMENT_ID) return;
     const qs = searchParams?.toString();
     const path = qs ? `${pathname}?${qs}` : pathname || "/";
-    gaPageview(path);
+    pageview(path);
   }, [pathname, searchParams]);
 
   return null;
 }
 
+function shouldLoadAnalyticsScripts(): boolean {
+  if (!GA_MEASUREMENT_ID) return false;
+  return process.env.NODE_ENV === "production" || isAnalyticsDebugMode();
+}
+
 /**
- * GA4 global: carga gtag.js y reenvía pageviews en cada cambio de ruta (App Router).
+ * GA4 global: gtag.js + pageviews en cada cambio de ruta (App Router).
  */
 export function GoogleAnalytics() {
-  if (process.env.NODE_ENV !== "production" || !GA_MEASUREMENT_ID) {
+  if (!shouldLoadAnalyticsScripts()) {
     return null;
   }
 
   const src = `https://www.googletagmanager.com/gtag/js?id=${encodeURIComponent(GA_MEASUREMENT_ID)}`;
+  const debugMode = isAnalyticsDebugMode();
 
   return (
     <>
@@ -38,7 +48,9 @@ export function GoogleAnalytics() {
           window.dataLayer = window.dataLayer || [];
           function gtag(){dataLayer.push(arguments);}
           gtag('js', new Date());
-          gtag('config', '${GA_MEASUREMENT_ID}', { send_page_view: false });
+          gtag('config', '${GA_MEASUREMENT_ID}', {
+            send_page_view: false${debugMode ? ",\n            debug_mode: true" : ""}
+          });
         `}
       </Script>
       <Suspense fallback={null}>

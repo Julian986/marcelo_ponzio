@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useMemo, useState } from "react";
 
+import { TrackedLink } from "@/components/analytics/tracked-link";
 import { AppBottomNav } from "@/components/app-bottom-nav";
 import { LightPageHeader } from "@/components/light-page-header";
 import {
@@ -80,12 +81,14 @@ export function TratamientosClient() {
                 <p className="mt-1 text-[13px] font-medium text-gray-400">Duración: {service.durationLabel}</p>
 
                 <div className="mt-auto pt-3">
-                  <Link
+                  <TrackedLink
                     href={`/turnos?treatment=${encodeURIComponent(service.name)}`}
+                    trackAction="reservar_turno"
+                    trackLabel="tratamientos"
                     className="flex h-10 w-full items-center justify-center rounded-full bg-[#B88E2F] text-[15px] font-semibold text-white shadow-md transition active:scale-[0.98]"
                   >
                     Reservar
-                  </Link>
+                  </TrackedLink>
                 </div>
               </div>
             </article>

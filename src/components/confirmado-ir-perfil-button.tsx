@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 
-import { event as gaEvent, GA_EVENT_CUSTOMER_SESSION_START } from "@/lib/gtag";
+import { GA_EVENT_CUSTOMER_SESSION_START, trackEvent } from "@/lib/gtag";
 
 type Props = {
   phone: string;
@@ -24,7 +24,16 @@ export function ConfirmadoIrPerfilButton({ phone }: Props) {
           body: JSON.stringify({ phone: p, source: "confirmado" }),
         });
         if (res.ok) {
-          gaEvent(GA_EVENT_CUSTOMER_SESSION_START, { login_source: "confirmado" });
+          trackEvent({
+            action: GA_EVENT_CUSTOMER_SESSION_START,
+            category: "auth",
+            label: "confirmado",
+          });
+          trackEvent({
+            action: "ir_perfil",
+            category: "cta",
+            label: "confirmado",
+          });
         }
       }
     } catch {

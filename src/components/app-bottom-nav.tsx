@@ -6,6 +6,8 @@ import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 
+import { trackNavClick } from "@/lib/analytics/track";
+
 const GOLD = "#B88E2F";
 
 /** Altura fija de la barra (Tailwind h-16). */
@@ -33,6 +35,7 @@ export function AppBottomNavBar() {
             key={href}
             href={href}
             className="flex flex-1 flex-col items-center justify-center gap-1"
+            onClick={() => trackNavClick(label)}
           >
             <Icon
               className="app-bottom-nav__icon"

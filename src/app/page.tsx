@@ -1,5 +1,6 @@
 "use client";
 
+import { TrackedLink } from "@/components/analytics/tracked-link";
 import { DesignUpdateAnnouncement } from "@/components/announcements/design-update-announcement";
 import { BrandLogo } from "@/components/brand-logo";
 import { AppBottomNav } from "@/components/app-bottom-nav";
@@ -74,35 +75,43 @@ function HomeContent() {
 
       <main className="mx-auto w-full max-w-md flex-grow px-6 pt-4 pb-32">
         <section className="space-y-6">
-          <Link
+          <TrackedLink
             href="/turnos"
+            trackAction="reservar_turno"
+            trackLabel="home"
             className="flex h-16 w-full items-center justify-center rounded-full bg-[#B8860B] text-xl font-semibold text-white shadow-lg transition active:scale-[0.98]"
           >
             Reservar Turno
-          </Link>
+          </TrackedLink>
 
           <div className="grid grid-cols-2 gap-4">
-            <Link
+            <TrackedLink
               href="/tratamientos"
+              trackAction="ver_tratamientos"
+              trackLabel="home"
               className="flex h-[52px] items-center justify-center rounded-full border-[1.5px] border-[#B8860B] bg-[#212121] text-base font-medium text-white transition active:scale-[0.98]"
             >
               Tratamientos
-            </Link>
-            <Link
+            </TrackedLink>
+            <TrackedLink
               href="/promociones"
+              trackAction="ver_promociones"
+              trackLabel="home"
               className="flex h-[52px] items-center justify-center rounded-full border-[1.5px] border-[#B8860B] bg-[#212121] text-base font-medium text-white transition active:scale-[0.98]"
             >
               Promociones
-            </Link>
+            </TrackedLink>
           </div>
 
           <div className="pt-4">
-            <Link
+            <TrackedLink
               href="/contacto"
+              trackAction="ver_contacto"
+              trackLabel="home"
               className="flex h-16 w-full items-center justify-center rounded-full border border-gray-100 bg-white text-xl font-semibold text-[#212121] shadow-sm transition active:scale-[0.98]"
             >
               Contacto
-            </Link>
+            </TrackedLink>
           </div>
         </section>
       </main>

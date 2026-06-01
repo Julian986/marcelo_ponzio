@@ -8,7 +8,7 @@ import { DesignUpdateAnnouncement } from "@/components/announcements/design-upda
 import { BookingPicker } from "@/components/booking/booking-picker";
 import { BookingStepServices } from "@/components/booking/booking-step-services";
 import { BookingWizardShell } from "@/components/booking/booking-wizard-shell";
-import { event as gaEvent } from "@/lib/gtag";
+import { trackEvent, trackWizardContinue } from "@/lib/analytics/track";
 import {
   SALON_TREATMENT_OPTIONS,
   formatSalonDisplayDate,
@@ -406,7 +406,10 @@ export default function TurnosClient({ initialTreatment = "" }: TurnosClientProp
       }
 
       if (dataPending.bookingMode === "confirmed") {
-        gaEvent("reservation_confirmed_no_deposit", {
+        trackEvent({
+          action: "create_appointment",
+          category: "appointments",
+          label: "no_deposit",
           treatment_id: primaryService.id,
           treatment_name: selectedServicesSummary,
           date_key: selectedDate,
@@ -458,7 +461,10 @@ export default function TurnosClient({ initialTreatment = "" }: TurnosClientProp
         id: dataPending.id,
       };
       sessionStorage.setItem("mp_turno_snapshot", JSON.stringify(snapshot));
-      gaEvent("reservation_checkout_start", {
+      trackEvent({
+        action: "reservation_checkout_start",
+        category: "appointments",
+        label: "mercadopago",
         treatment_id: primaryService.id,
         treatment_name: selectedServicesSummary,
         date_key: selectedDate,
@@ -493,6 +499,7 @@ export default function TurnosClient({ initialTreatment = "" }: TurnosClientProp
       void handleMercadoPagoCheckout();
       return;
     }
+    trackWizardContinue(wizardStep);
     handleWizardContinue();
   };
 

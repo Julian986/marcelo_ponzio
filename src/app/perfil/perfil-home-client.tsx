@@ -4,9 +4,10 @@ import { CalendarDays, ChevronRight, Clock3, Percent, Sparkles } from "lucide-re
 import Link from "next/link";
 import { useMemo, useState } from "react";
 
+import { TrackedLink } from "@/components/analytics/tracked-link";
 import { usePerfilSession } from "@/components/perfil/perfil-session-provider";
 import { isLikelyWhatsappNumber } from "@/lib/booking/salon-availability";
-import { event as gaEvent, GA_EVENT_CUSTOMER_SESSION_START } from "@/lib/gtag";
+import { GA_EVENT_CUSTOMER_SESSION_START, trackEvent } from "@/lib/gtag";
 import { isUpcomingReservation } from "@/lib/reservations/customer-public-serialize";
 
 type MenuItem = {
@@ -54,7 +55,11 @@ export function PerfilHomeClient() {
         setError(data.error ?? "No se pudo iniciar sesión.");
         return;
       }
-      gaEvent(GA_EVENT_CUSTOMER_SESSION_START, { login_source: "perfil" });
+      trackEvent({
+        action: GA_EVENT_CUSTOMER_SESSION_START,
+        category: "auth",
+        label: "perfil",
+      });
       setPhoneInput("");
       await onLoginSuccess();
     } catch {
@@ -168,12 +173,14 @@ export function PerfilHomeClient() {
 
       {me === "authed" ? (
         <>
-          <Link
+          <TrackedLink
             href="/turnos"
+            trackAction="reservar_turno"
+            trackLabel="perfil"
             className="mb-4 flex h-14 w-full items-center justify-center rounded-full bg-[#B88E2F] text-lg font-semibold text-white shadow-lg transition active:scale-[0.98]"
           >
             Reservar nuevo turno
-          </Link>
+          </TrackedLink>
 
           {nextAppointment ? (
             <Link
