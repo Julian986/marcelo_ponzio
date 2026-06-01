@@ -10,6 +10,7 @@ import type { ReprogramDayRow } from "@/lib/booking/panel-reprogram-day-rows";
 import { PANEL_WEEK_LETTERS, buildPanelMonthGrid, panelMonthTitle } from "@/lib/booking/panel-month-grid";
 import { argentinaTodayDateKey, minPublicBookableDateKey } from "@/lib/booking/public-slot-lead";
 import { panelBackBtn, panelCard, panelPage, panelPrimaryBtn } from "@/components/panel/panel-ui";
+import { trackEvent, trackPanelClick } from "@/lib/analytics/track";
 
 export type ReprogramarVariant = "customer" | "panel";
 
@@ -275,6 +276,15 @@ export function ReprogramarTurnoClient({
       if (!res.ok) {
         setSaveError(data.error ?? "No se pudo guardar.");
         return;
+      }
+      if (variant === "panel") {
+        trackPanelClick("reprogramar", "saved");
+      } else {
+        trackEvent({
+          action: "reprogramar",
+          category: "appointments",
+          label: "perfil_saved",
+        });
       }
       const dest = variant === "customer" ? `${backHref}?rescheduled=1` : backHref;
       router.push(dest);

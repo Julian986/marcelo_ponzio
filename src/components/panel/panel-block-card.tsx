@@ -2,6 +2,7 @@
 
 import { Lock } from "lucide-react";
 
+import { trackPanelClick } from "@/lib/analytics/track";
 import { isReservationTimeFocused } from "@/lib/booking/panel-now-focus";
 
 import type { PanelAgendaBlock } from "@/components/panel/panel-types";
@@ -63,7 +64,10 @@ export function PanelBlockCard({ block: b, selectedDateKey, onDelete }: PanelBlo
 
         <button
           type="button"
-          onClick={onDelete}
+          onClick={() => {
+            trackPanelClick("delete_block", "card");
+            onDelete();
+          }}
           className="mt-3 flex h-10 w-full cursor-pointer items-center justify-center rounded-xl border border-red-200 bg-white text-[14px] font-semibold text-red-600 transition hover:bg-red-50"
         >
           Eliminar bloqueo

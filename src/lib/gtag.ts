@@ -11,6 +11,8 @@ export {
   sendAnalyticsEvent,
   trackEvent,
   trackNavClick,
+  trackPanelClick,
+  trackPerfilMenuClick,
   trackReservarTurno,
   trackWizardContinue,
 } from "@/lib/analytics";

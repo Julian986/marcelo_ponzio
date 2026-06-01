@@ -7,7 +7,7 @@ import { useMemo, useState } from "react";
 import { TrackedLink } from "@/components/analytics/tracked-link";
 import { usePerfilSession } from "@/components/perfil/perfil-session-provider";
 import { isLikelyWhatsappNumber } from "@/lib/booking/salon-availability";
-import { GA_EVENT_CUSTOMER_SESSION_START, trackEvent } from "@/lib/gtag";
+import { GA_EVENT_CUSTOMER_SESSION_START, trackEvent, trackPerfilMenuClick } from "@/lib/gtag";
 import { isUpcomingReservation } from "@/lib/reservations/customer-public-serialize";
 
 type MenuItem = {
@@ -15,6 +15,8 @@ type MenuItem = {
   title: string;
   subtitle: string;
   Icon: typeof CalendarDays;
+  /** Etiqueta GA4 (`event_label`) para `perfil_menu_click`. */
+  trackLabel: string;
   badge?: string;
   disabled?: boolean;
 };
@@ -83,6 +85,7 @@ export function PerfilHomeClient() {
       href: "/perfil/mis-turnos",
       title: "Mis turnos",
       subtitle: "Ver, cambiar o cancelar",
+      trackLabel: "mis_turnos",
       Icon: CalendarDays,
       badge: me === "authed" ? String(upcoming.length) : undefined,
     },
@@ -90,18 +93,21 @@ export function PerfilHomeClient() {
       href: "/perfil/historial-tratamientos",
       title: "Historial",
       subtitle: "Sesiones realizadas",
+      trackLabel: "historial",
       Icon: Clock3,
     },
     {
       href: "/tratamientos?from=perfil",
       title: "Servicios",
       subtitle: "Catálogo completo",
+      trackLabel: "servicios",
       Icon: Sparkles,
     },
     {
       href: "/promociones?from=perfil",
       title: "Promociones",
       subtitle: "Beneficios del mes",
+      trackLabel: "promociones",
       Icon: Percent,
     },
   ];
@@ -185,6 +191,7 @@ export function PerfilHomeClient() {
           {nextAppointment ? (
             <Link
               href="/perfil/mis-turnos"
+              onClick={() => trackPerfilMenuClick("proximo_turno")}
               className="mb-6 block rounded-[24px] border border-[#B88E2F]/30 bg-[#B88E2F]/8 p-5 shadow-[0_4px_20px_rgba(0,0,0,0.04)] transition hover:border-[#B88E2F]/50"
             >
               <p className="text-sm font-semibold text-[#B88E2F] uppercase tracking-wide">Próximo turno</p>
@@ -204,7 +211,7 @@ export function PerfilHomeClient() {
 
       <section className="space-y-3">
         <p className="text-sm font-semibold tracking-wide text-gray-500 uppercase">Menú</p>
-        {menuItems.map(({ href, title, subtitle, Icon, badge, disabled }) =>
+        {menuItems.map(({ href, title, subtitle, Icon, badge, disabled, trackLabel }) =>
           disabled ? (
             <div
               key={title}
@@ -224,6 +231,7 @@ export function PerfilHomeClient() {
             <Link
               key={href}
               href={href}
+              onClick={() => trackPerfilMenuClick(trackLabel)}
               className="flex cursor-pointer items-center justify-between rounded-[24px] border border-gray-50 bg-white px-5 py-4 shadow-[0_4px_20px_rgba(0,0,0,0.05)] transition active:scale-[0.99] hover:border-[#B88E2F]/25"
             >
               <div className="flex items-center gap-4">

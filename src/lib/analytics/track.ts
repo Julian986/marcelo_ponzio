@@ -46,3 +46,26 @@ export function trackWizardContinue(step: number): void {
     label: `step_${step}`,
   });
 }
+
+/** Ítem del menú en /perfil (Mis turnos, Historial, etc.). */
+export function trackPerfilMenuClick(item: string): void {
+  trackEvent({
+    action: "perfil_menu_click",
+    category: "navigation",
+    label: item,
+  });
+}
+
+/** Acciones del panel de administración (/panel-turnos). Sin datos personales de clientas. */
+export function trackPanelClick(
+  action: string,
+  label?: string,
+  extra?: Record<string, unknown>,
+): void {
+  trackEvent({
+    action,
+    category: "panel",
+    ...(label !== undefined ? { label } : {}),
+    ...extra,
+  });
+}

@@ -7,5 +7,12 @@ export {
   pageview,
   sendAnalyticsEvent,
 } from "@/lib/analytics/client";
-export { trackEvent, trackNavClick, trackReservarTurno, trackWizardContinue } from "@/lib/analytics/track";
+export {
+  trackEvent,
+  trackNavClick,
+  trackPanelClick,
+  trackPerfilMenuClick,
+  trackReservarTurno,
+  trackWizardContinue,
+} from "@/lib/analytics/track";
 export type { AnalyticsEventCategory, TrackEventParams } from "@/lib/analytics/types";

@@ -12,6 +12,7 @@ import {
   panelInput,
   panelPage,
 } from "@/components/panel/panel-ui";
+import { trackPanelClick } from "@/lib/analytics/track";
 import { BookingPicker } from "@/components/booking/booking-picker";
 import {
   SALON_TREATMENT_OPTIONS,
@@ -107,6 +108,7 @@ export function PanelNuevoTurnoClient() {
         return;
       }
       if (data.ok && data.id) {
+        trackPanelClick("agregar_turno", "saved");
         router.push("/panel-turnos");
         router.refresh();
       }

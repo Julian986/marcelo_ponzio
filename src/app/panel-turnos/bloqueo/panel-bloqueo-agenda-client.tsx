@@ -17,6 +17,7 @@ import {
   panelPage,
   panelPrimaryBtn,
 } from "@/components/panel/panel-ui";
+import { trackPanelClick } from "@/lib/analytics/track";
 import {
   PANEL_WEEK_LETTERS,
   buildPanelMonthGrid,
@@ -161,6 +162,7 @@ export function PanelBloqueoAgendaClient() {
         setError(data.error ?? "No se pudo guardar.");
         return;
       }
+      trackPanelClick("bloquear_horario", "saved");
       router.push("/panel-turnos");
     } catch {
       setError("Error de red. Probá de nuevo.");

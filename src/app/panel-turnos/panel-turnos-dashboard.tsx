@@ -31,6 +31,7 @@ import {
   panelMonthTitle,
 } from "@/lib/booking/panel-month-grid";
 import { pickScrollToReservationId } from "@/lib/booking/panel-now-focus";
+import { trackPanelClick } from "@/lib/analytics/track";
 import { argentinaTodayDateKey } from "@/lib/booking/public-slot-lead";
 
 export type { PanelAgendaBlock, PanelReservation } from "@/components/panel/panel-types";
@@ -227,6 +228,7 @@ export function PanelTurnosDashboard() {
       credentials: "same-origin",
     });
     if (!res.ok) return;
+    trackPanelClick("delete_block", "confirmed");
     reloadMonth();
   }
 
@@ -238,6 +240,7 @@ export function PanelTurnosDashboard() {
         credentials: "same-origin",
       });
       if (!res.ok) return;
+      trackPanelClick("cancel_turno", "confirmed");
       reloadMonth();
     } finally {
       setCancellingReservationId(null);
@@ -245,6 +248,7 @@ export function PanelTurnosDashboard() {
   }
 
   async function handleLogout() {
+    trackPanelClick("panel_logout");
     setLogoutBusy(true);
     await fetch("/api/panel-turnos/logout", { method: "POST" });
     router.refresh();
@@ -252,6 +256,7 @@ export function PanelTurnosDashboard() {
   }
 
   function prevMonth() {
+    trackPanelClick("calendar_nav", "prev_month");
     if (month === 1) {
       setMonth(12);
       setYear((y) => y - 1);
@@ -261,6 +266,7 @@ export function PanelTurnosDashboard() {
   }
 
   function nextMonth() {
+    trackPanelClick("calendar_nav", "next_month");
     if (month === 12) {
       setMonth(1);
       setYear((y) => y + 1);
@@ -284,6 +290,7 @@ export function PanelTurnosDashboard() {
           <div className="mt-4 grid grid-cols-2 gap-3">
             <Link
               href="/panel-turnos/nuevo"
+              onClick={() => trackPanelClick("agregar_turno")}
               className="flex h-12 cursor-pointer items-center justify-center gap-2 rounded-2xl bg-[#B88E2F] text-[14px] font-semibold text-white shadow-md transition active:scale-[0.98]"
             >
               <Plus className="h-5 w-5" strokeWidth={2.2} />
@@ -291,6 +298,7 @@ export function PanelTurnosDashboard() {
             </Link>
             <Link
               href="/panel-turnos/bloqueo"
+              onClick={() => trackPanelClick("bloquear_horario")}
               className="flex h-12 cursor-pointer items-center justify-center gap-2 rounded-2xl border border-amber-200 bg-amber-50 text-[14px] font-semibold text-amber-900 transition hover:bg-amber-100"
             >
               <Lock className="h-5 w-5" strokeWidth={2.2} />
@@ -481,6 +489,7 @@ export function PanelTurnosDashboard() {
                 onClick={async () => {
                   const id = cancelConfirmReservationId;
                   if (!id) return;
+                  trackPanelClick("cancel_turno", "confirm_modal");
                   await handleCancelReservation(id);
                   setCancelConfirmReservationId(null);
                 }}

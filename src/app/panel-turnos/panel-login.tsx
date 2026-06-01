@@ -2,6 +2,7 @@
 
 import { BrandLogo } from "@/components/brand-logo";
 import { panelCard, panelInput, panelPage, panelPrimaryBtn } from "@/components/panel/panel-ui";
+import { trackPanelClick } from "@/lib/analytics/track";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
@@ -26,6 +27,7 @@ export function PanelLogin() {
         setError(data.error ?? "No se pudo ingresar.");
         return;
       }
+      trackPanelClick("panel_login", "success");
       router.refresh();
     } catch {
       setError("Error de red. Probá de nuevo.");

@@ -16,6 +16,7 @@ import {
   isReservationInProgress,
   isReservationTimeFocused,
 } from "@/lib/booking/panel-now-focus";
+import { trackPanelClick } from "@/lib/analytics/track";
 import { panelDurationLabel } from "@/lib/treatments/catalog";
 
 import type { PanelReservation } from "@/components/panel/panel-types";
@@ -152,6 +153,7 @@ export const PanelReservationCard = forwardRef<HTMLElement, PanelReservationCard
           <div className="border-t border-gray-100 px-4 pt-3 pb-3.5">
             <Link
               href={`/panel-turnos/reprogramar/${encodeURIComponent(r.id)}`}
+              onClick={() => trackPanelClick("reprogramar", "card")}
               className={[
                 "flex h-11 w-full cursor-pointer items-center justify-center gap-2 rounded-xl text-[15px] font-semibold transition active:scale-[0.99]",
                 focused
@@ -169,6 +171,7 @@ export const PanelReservationCard = forwardRef<HTMLElement, PanelReservationCard
                   href={whatsAppUrl}
                   target="_blank"
                   rel="noopener noreferrer"
+                  onClick={() => trackPanelClick("whatsapp", "card")}
                   className="inline-flex min-w-0 cursor-pointer items-center gap-1.5 text-[13px] font-medium text-[#1A7A3A] underline-offset-2 hover:underline"
                 >
                   <MessageCircle className="h-4 w-4 shrink-0" strokeWidth={2} />
@@ -180,7 +183,10 @@ export const PanelReservationCard = forwardRef<HTMLElement, PanelReservationCard
 
               <button
                 type="button"
-                onClick={onRequestCancel}
+                onClick={() => {
+                  trackPanelClick("cancel_turno", "open");
+                  onRequestCancel();
+                }}
                 disabled={cancelDisabled}
                 className="inline-flex shrink-0 cursor-pointer items-center gap-1 text-[13px] font-medium text-red-600 underline-offset-2 hover:underline disabled:cursor-not-allowed disabled:opacity-45"
               >
