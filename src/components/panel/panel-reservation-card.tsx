@@ -111,7 +111,7 @@ export const PanelReservationCard = forwardRef<HTMLElement, PanelReservationCard
 
           <h3
             className={[
-              "mt-3 font-heading text-[22px] font-bold leading-tight break-words",
+              "mt-3 font-montserrat text-[22px] font-bold leading-tight break-words",
               focused ? "text-gray-900" : "text-gray-800",
             ].join(" ")}
           >
@@ -149,41 +149,45 @@ export const PanelReservationCard = forwardRef<HTMLElement, PanelReservationCard
         </div>
 
         {canManage ? (
-          <div className="space-y-2 px-4 pb-4">
-            {whatsAppUrl ? (
-              <a
-                href={whatsAppUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex h-12 w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-[#25D366] text-[15px] font-semibold text-white shadow-md transition hover:bg-[#20BD5A] active:scale-[0.99]"
-              >
-                <MessageCircle className="h-5 w-5 shrink-0" strokeWidth={2} />
-                WhatsApp
-              </a>
-            ) : null}
-
+          <div className="border-t border-gray-100 px-4 pt-3 pb-3.5">
             <Link
               href={`/panel-turnos/reprogramar/${encodeURIComponent(r.id)}`}
               className={[
-                "flex h-12 w-full cursor-pointer items-center justify-center gap-2 rounded-xl border-2 bg-white text-[15px] font-semibold transition active:scale-[0.99]",
+                "flex h-11 w-full cursor-pointer items-center justify-center gap-2 rounded-xl text-[15px] font-semibold transition active:scale-[0.99]",
                 focused
-                  ? "border-[#B88E2F] text-[#B88E2F] hover:bg-[#B88E2F]/5"
-                  : "border-gray-300 text-gray-700 hover:bg-gray-50",
+                  ? "bg-[#B88E2F] text-white shadow-sm hover:bg-[#A67D28]"
+                  : "border-2 border-gray-300 bg-white text-gray-700 hover:bg-gray-50",
               ].join(" ")}
             >
               <CalendarClock className="h-5 w-5 shrink-0" strokeWidth={2} />
               Reprogramar
             </Link>
 
-            <button
-              type="button"
-              onClick={onRequestCancel}
-              disabled={cancelDisabled}
-              aria-label="Cancelar turno"
-              className="flex h-10 w-10 cursor-pointer items-center justify-center rounded-xl border border-gray-200 bg-gray-50 text-red-500 transition hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              <Trash2 className="h-4 w-4" strokeWidth={2} />
-            </button>
+            <div className="mt-2.5 flex items-center justify-between gap-3">
+              {whatsAppUrl ? (
+                <a
+                  href={whatsAppUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex min-w-0 cursor-pointer items-center gap-1.5 text-[13px] font-medium text-[#1A7A3A] underline-offset-2 hover:underline"
+                >
+                  <MessageCircle className="h-4 w-4 shrink-0" strokeWidth={2} />
+                  <span className="truncate">Enviar WhatsApp</span>
+                </a>
+              ) : (
+                <span />
+              )}
+
+              <button
+                type="button"
+                onClick={onRequestCancel}
+                disabled={cancelDisabled}
+                className="inline-flex shrink-0 cursor-pointer items-center gap-1 text-[13px] font-medium text-red-600 underline-offset-2 hover:underline disabled:cursor-not-allowed disabled:opacity-45"
+              >
+                <Trash2 className="h-3.5 w-3.5" strokeWidth={2} />
+                Cancelar
+              </button>
+            </div>
           </div>
         ) : null}
       </article>

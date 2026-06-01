@@ -1,5 +1,6 @@
 "use client";
 
+import { DesignUpdateAnnouncement } from "@/components/announcements/design-update-announcement";
 import { BrandLogo } from "@/components/brand-logo";
 import { AppBottomNav } from "@/components/app-bottom-nav";
 import { HOME_HERO_IMAGE_URL } from "@/lib/home-hero-image";
@@ -158,5 +159,10 @@ export default function Home() {
     return <SplashScreen onLogoReady={handleSplashLogoReady} />;
   }
 
-  return <HomeContent />;
+  return (
+    <>
+      <HomeContent />
+      <DesignUpdateAnnouncement scope="/" />
+    </>
+  );
 }

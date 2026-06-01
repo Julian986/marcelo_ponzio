@@ -11,6 +11,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
+import { DesignUpdateAnnouncement } from "@/components/announcements/design-update-announcement";
 import { PanelBlockCard } from "@/components/panel/panel-block-card";
 import { PanelReservationCard } from "@/components/panel/panel-reservation-card";
 import type { PanelAgendaBlock, PanelReservation } from "@/components/panel/panel-types";
@@ -275,7 +276,7 @@ export function PanelTurnosDashboard() {
           <div className="flex items-start justify-between gap-3">
             <div>
               <p className="text-[12px] font-medium uppercase tracking-[0.12em] text-gray-500">Panel</p>
-              <h1 className="font-heading text-[22px] font-bold leading-tight text-gray-900">Agenda del salón</h1>
+              <h1 className="font-montserrat text-[22px] font-bold leading-tight text-gray-900">Agenda del salón</h1>
               <p className="mt-1 text-[14px] text-gray-500">Marcelo Ponzio Estilista</p>
             </div>
           </div>
@@ -462,7 +463,7 @@ export function PanelTurnosDashboard() {
             className="w-full max-w-sm rounded-2xl border border-gray-200 bg-white p-5 shadow-xl"
             onClick={(e) => e.stopPropagation()}
           >
-            <h3 className="font-heading text-[20px] font-bold text-gray-900">Cancelar turno</h3>
+            <h3 className="font-montserrat text-[20px] font-bold text-gray-900">Cancelar turno</h3>
             <p className="mt-2 text-[14px] leading-relaxed text-gray-600">
               ¿Estás seguro que deseás cancelar este turno? Esta acción no se puede deshacer.
             </p>
@@ -492,6 +493,7 @@ export function PanelTurnosDashboard() {
           </div>
         </div>
       ) : null}
+      <DesignUpdateAnnouncement scope="/panel-turnos" titleClassName="font-montserrat" />
     </div>
   );
 }

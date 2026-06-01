@@ -68,11 +68,9 @@ export function AppBottomNav() {
     setMounted(true);
   }, []);
 
-  const shell = <AppBottomNavShell />;
-
   if (!mounted) {
-    return shell;
+    return null;
   }
 
-  return createPortal(shell, document.body);
+  return createPortal(<AppBottomNavShell />, document.body);
 }

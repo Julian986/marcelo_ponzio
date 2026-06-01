@@ -4,6 +4,7 @@ import { Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
+import { DesignUpdateAnnouncement } from "@/components/announcements/design-update-announcement";
 import { BookingPicker } from "@/components/booking/booking-picker";
 import { BookingStepServices } from "@/components/booking/booking-step-services";
 import { BookingWizardShell } from "@/components/booking/booking-wizard-shell";
@@ -552,6 +553,7 @@ export default function TurnosClient({ initialTreatment = "" }: TurnosClientProp
     ) : null;
 
   return (
+    <>
     <BookingWizardShell
       onBack={handleWizardBack}
       title={stepMeta.title}
@@ -709,6 +711,8 @@ export default function TurnosClient({ initialTreatment = "" }: TurnosClientProp
         </div>
       ) : null}
     </BookingWizardShell>
+    <DesignUpdateAnnouncement scope="/turnos" />
+    </>
   );
 }
 

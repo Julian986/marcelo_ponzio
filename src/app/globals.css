@@ -36,6 +36,10 @@ body {
   font-family: var(--font-playfair), serif;
 }
 
+.font-montserrat {
+  font-family: var(--font-montserrat), sans-serif;
+}
+
 /* Nav inferior — tamaños fijos en px, independientes del contexto de cada página */
 .app-bottom-nav {
   -webkit-text-size-adjust: 100%;
