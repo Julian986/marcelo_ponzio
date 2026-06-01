@@ -1,8 +1,9 @@
 "use client";
 
+import { DesignUpdateAnnouncement } from "@/components/announcements/design-update-announcement";
 import { BrandLogo } from "@/components/brand-logo";
+import { AppBottomNav } from "@/components/app-bottom-nav";
 import { HOME_HERO_IMAGE_URL } from "@/lib/home-hero-image";
-import { CalendarDays, Home as HomeIcon, Percent, Sparkles, User } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
@@ -15,9 +16,8 @@ const SPLASH_AFTER_LOAD_MS = 90;
 
 function SplashScreen({ onLogoReady }: { onLogoReady: () => void }) {
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center bg-[#111111] text-white">
+    <div className="flex min-h-screen flex-col items-center justify-center bg-white text-[#212121]">
       <div className="flex w-full max-w-md flex-col items-center px-6">
-        {/* Logo */}
         <div className="mb-8 text-center">
           <div className="inline-flex flex-col items-center gap-2">
             <BrandLogo
@@ -27,18 +27,14 @@ function SplashScreen({ onLogoReady }: { onLogoReady: () => void }) {
               onLoad={onLogoReady}
               onError={onLogoReady}
             />
-            <div className="text-center text-2xl font-medium leading-tight tracking-[0.12em] font-heading">
-              <span className="block">MARCELO PONZIO</span>
-              <span className="mt-1 block text-lg tracking-[0.2em]">ESTILISTA</span>
-            </div>
-            <div className="text-xs tracking-[0.25em] text-[var(--soft-gray)]/80">
-              Color · Corte · Peinado
-            </div>
+            <h1 className="gold-text-gradient text-center font-heading text-2xl font-bold leading-tight tracking-wide uppercase">
+              <span className="block">Marcelo Ponzio</span>
+              <span className="mt-1 block text-lg tracking-[0.2em]">Estilista</span>
+            </h1>
+            <p className="text-xs tracking-[0.25em] text-gray-600">Color · Corte · Peinado</p>
           </div>
         </div>
-
-        {/* Frase */}
-        <p className="max-w-xs text-center text-sm leading-relaxed text-[var(--soft-gray)]">
+        <p className="max-w-xs text-center text-sm leading-relaxed text-gray-600">
           Asesoramiento y técnica profesional para que tu pelo luzca como vos querés.
         </p>
       </div>
@@ -48,155 +44,70 @@ function SplashScreen({ onLogoReady }: { onLogoReady: () => void }) {
 
 function HomeContent() {
   return (
-    <div className="relative min-h-screen overflow-hidden bg-[#111111] text-white">
-      {/* Fondo con foto: solo hasta md — en pantallas anchas el cover recorta mal una portada vertical */}
-      <div className="fixed top-0 right-0 left-0 z-0 h-[100svh] md:hidden">
-        <Image
-          src={HOME_HERO_IMAGE_URL}
-          alt=""
-          fill
-          priority
-          fetchPriority="high"
-          sizes="100vw"
-          quality={80}
-          className="object-cover object-[center_35%]"
-          aria-hidden
-        />
-      </div>
+    <div className="flex min-h-screen flex-col bg-white text-[#212121]">
+      <h1 className="sr-only">Marcelo Ponzio Estilista</h1>
 
-      {/* Degradado sobre la foto (solo móvil) */}
-      <div
-        className="fixed top-0 right-0 left-0 z-10 h-[100svh] md:hidden"
-        style={{
-          backgroundImage:
-            "linear-gradient(to bottom, rgba(17,17,17,0.98) 0%, rgba(17,17,17,0.88) 16%, rgba(17,17,17,0.48) 38%, rgba(17,17,17,0.22) 54%, rgba(17,17,17,0.62) 68%, rgba(17,17,17,0.94) 84%, rgba(17,17,17,1) 100%)",
-        }}
-      />
+      <section className="relative w-full shrink-0">
+        <div className="relative h-[min(48vh,440px)] min-h-[280px] w-full md:hidden">
+          <Image
+            src={HOME_HERO_IMAGE_URL}
+            alt="Interior del salón Marcelo Ponzio Estilista"
+            fill
+            priority
+            fetchPriority="high"
+            sizes="100vw"
+            quality={85}
+            className="object-cover object-[center_35%]"
+          />
+          <div aria-hidden className="hero-gradient-overlay absolute inset-0" />
+        </div>
 
-      {/* Tablet / escritorio: sin foto, fondo editorial coherente con la app */}
-      <div
-        aria-hidden
-        className="fixed top-0 right-0 left-0 z-0 hidden h-[100svh] bg-[#111111] md:block"
-        style={{
-          backgroundImage: [
-            "radial-gradient(ellipse 120% 70% at 50% -15%, rgba(228,202,105,0.14), transparent 52%)",
-            "radial-gradient(ellipse 80% 55% at 100% 40%, rgba(206,120,50,0.07), transparent 45%)",
-            "radial-gradient(ellipse 60% 50% at 0% 75%, rgba(228,202,105,0.05), transparent 42%)",
-            "linear-gradient(to bottom, #151515 0%, #111111 38%, #101010 100%)",
-          ].join(","),
-        }}
-      />
+        <div className="px-6 pt-5 pb-2 text-center md:pt-12">
+          <p className="gold-text-gradient font-heading text-[32px] leading-tight font-bold tracking-wide uppercase">
+            Marcelo Ponzio
+            <br />
+            Estilista
+          </p>
+          <p className="mt-2 text-lg font-normal tracking-widest text-gray-700">Color · Corte · Peinado</p>
+        </div>
+      </section>
 
-      <main className="relative z-20 mx-auto min-h-screen w-full max-w-md px-5 pt-20 pb-28">
-        <header className="flex justify-center">
-          <div className="inline-flex flex-col items-center gap-1 text-center">
-            <BrandLogo size="header" />
-            <div className="text-center text-[22px] font-medium leading-tight tracking-[0.14em] text-white font-heading">
-              <span className="block">MARCELO PONZIO</span>
-              <span className="mt-0.5 block text-[19px] tracking-[0.18em]">ESTILISTA</span>
-            </div>
-            <div className="text-[11px] tracking-[0.28em] text-[var(--soft-gray)]/90">
-              Color · Corte · Peinado
-            </div>
+      <main className="mx-auto w-full max-w-md flex-grow px-6 pt-4 pb-32">
+        <section className="space-y-6">
+          <Link
+            href="/turnos"
+            className="flex h-16 w-full items-center justify-center rounded-full bg-[#B8860B] text-xl font-semibold text-white shadow-lg transition active:scale-[0.98]"
+          >
+            Reservar Turno
+          </Link>
+
+          <div className="grid grid-cols-2 gap-4">
+            <Link
+              href="/tratamientos"
+              className="flex h-[52px] items-center justify-center rounded-full border-[1.5px] border-[#B8860B] bg-[#212121] text-base font-medium text-white transition active:scale-[0.98]"
+            >
+              Tratamientos
+            </Link>
+            <Link
+              href="/promociones"
+              className="flex h-[52px] items-center justify-center rounded-full border-[1.5px] border-[#B8860B] bg-[#212121] text-base font-medium text-white transition active:scale-[0.98]"
+            >
+              Promociones
+            </Link>
           </div>
-        </header>
 
-        <div className="mt-[31vh] space-y-4 md:mt-14">
-          <section className="pb-1">
-            <h1 className="sr-only">Marcelo Ponzio Estilista</h1>
-            <div className="mx-auto flex w-[84%] flex-col gap-3">
-              <Link
-                href="/turnos"
-                className="flex h-[52px] items-center justify-center rounded-full bg-[var(--premium-gold)] px-6 text-[16px] font-semibold tracking-[0.14em] text-[var(--on-accent)] shadow-[0_16px_36px_rgba(0,0,0,0.45)]"
-              >
-                Reservar turno
-              </Link>
-              <Link
-                href="/tratamientos"
-                className="flex h-[52px] items-center justify-center rounded-full border border-white/8 bg-black/45 px-6 text-[15px] font-medium tracking-[0.14em] text-white backdrop-blur-[10px]"
-              >
-                Tratamientos
-              </Link>
-              <Link
-                href="/promociones"
-                className="flex h-[52px] items-center justify-center rounded-full border border-white/8 bg-black/45 px-6 text-[15px] font-medium tracking-[0.14em] text-white backdrop-blur-[10px]"
-              >
-                Promociones
-              </Link>
-            </div>
-          </section>
-
-          <section className="mx-auto w-[84%] space-y-3">
+          <div className="pt-4">
             <Link
               href="/contacto"
-              className="flex h-[52px] w-full items-center justify-center rounded-full border border-white/8 bg-black/45 px-6 text-[15px] font-medium tracking-[0.14em] text-white backdrop-blur-[10px]"
+              className="flex h-16 w-full items-center justify-center rounded-full border border-gray-100 bg-white text-xl font-semibold text-[#212121] shadow-sm transition active:scale-[0.98]"
             >
               Contacto
             </Link>
-          </section>
-
-          <section className="mx-auto w-[84%]">
-            <div className="mb-3 text-[10px] tracking-[0.24em] text-[var(--soft-gray)]/70">
-              PROMOCION DESTACADA DEL MES
-            </div>
-            <div className="rounded-[28px] border border-white/8 bg-black/50 p-4 shadow-[0_18px_40px_rgba(0,0,0,0.4)] backdrop-blur-[14px]">
-              <div className="text-[10px] tracking-[0.24em] text-[var(--premium-gold)]">
-                DESTACADO
-              </div>
-              <h2 className="mt-2 text-lg leading-tight text-white font-heading">
-                Servicio completo
-              </h2>
-              <p className="mt-2 text-xs leading-relaxed text-[var(--soft-gray)]">
-                Color, lavado, corte y peinado en una sola visita (1 h 30 min).
-              </p>
-              <div className="mt-3 flex items-center justify-between gap-3">
-                <Link
-                  href="/turnos?treatment=Servicio%20completo"
-                  className="flex h-10 items-center justify-center rounded-full bg-[var(--premium-gold)] px-5 text-[12px] font-semibold tracking-[0.14em] text-[var(--on-accent)]"
-                >
-                  Reservar ahora
-                </Link>
-                <span className="text-[10px] tracking-[0.08em] text-[var(--soft-gray)]/75">
-                  Cupos limitados
-                </span>
-              </div>
-            </div>
-          </section>
-        </div>
+          </div>
+        </section>
       </main>
 
-      <nav className="fixed bottom-0 left-0 right-0 z-30">
-        <div className="flex w-full items-center justify-between border-t border-white/8 bg-black/60 px-4 py-2.5 backdrop-blur-[16px]">
-          <button className="flex min-w-0 flex-1 flex-col items-center gap-1">
-            <HomeIcon className="h-5 w-5 text-[var(--premium-gold)]" strokeWidth={1.9} />
-            <span className="text-[9px] tracking-[0.12em] text-[var(--premium-gold)]">
-              Inicio
-            </span>
-          </button>
-          <Link href="/tratamientos" className="flex min-w-0 flex-1 flex-col items-center gap-1 text-[var(--soft-gray)]/80">
-            <Sparkles className="h-5 w-5 text-[var(--soft-gray)]/90" strokeWidth={1.8} />
-            <span className="text-[9px] tracking-[0.12em]">
-              Tratamientos
-            </span>
-          </Link>
-          <Link href="/turnos" className="flex min-w-0 flex-1 flex-col items-center gap-1 text-[var(--soft-gray)]/80">
-            <CalendarDays className="h-5 w-5 text-[var(--soft-gray)]/90" strokeWidth={1.8} />
-            <span className="text-[9px] tracking-[0.12em]">
-              Turnos
-            </span>
-          </Link>
-          <Link href="/promociones" className="flex min-w-0 flex-1 flex-col items-center gap-1 text-[var(--soft-gray)]/80">
-            <Percent className="h-5 w-5 text-[var(--soft-gray)]/90" strokeWidth={1.8} />
-            <span className="text-[9px] tracking-[0.12em]">
-              Promos
-            </span>
-          </Link>
-          <Link href="/perfil" className="flex min-w-0 flex-1 flex-col items-center gap-1 text-[var(--soft-gray)]/80">
-            <User className="h-5 w-5 text-[var(--soft-gray)]/90" strokeWidth={1.8} />
-            <span className="text-[9px] tracking-[0.12em]">Perfil</span>
-          </Link>
-        </div>
-      </nav>
+      <AppBottomNav />
     </div>
   );
 }
@@ -248,5 +159,10 @@ export default function Home() {
     return <SplashScreen onLogoReady={handleSplashLogoReady} />;
   }
 
-  return <HomeContent />;
+  return (
+    <>
+      <HomeContent />
+      <DesignUpdateAnnouncement scope="/" />
+    </>
+  );
 }

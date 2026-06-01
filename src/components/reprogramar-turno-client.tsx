@@ -9,6 +9,7 @@ import { agendaBlockAppliesToDateKey } from "@/lib/booking/agenda-blocks-shared"
 import type { ReprogramDayRow } from "@/lib/booking/panel-reprogram-day-rows";
 import { PANEL_WEEK_LETTERS, buildPanelMonthGrid, panelMonthTitle } from "@/lib/booking/panel-month-grid";
 import { argentinaTodayDateKey, minPublicBookableDateKey } from "@/lib/booking/public-slot-lead";
+import { panelBackBtn, panelCard, panelPage, panelPrimaryBtn } from "@/components/panel/panel-ui";
 
 export type ReprogramarVariant = "customer" | "panel";
 
@@ -310,19 +311,36 @@ export function ReprogramarTurnoClient({
     setCalendarMonth((m) => m + 1);
   }
 
+  const light = variant === "panel";
+
   return (
+    <div className={light ? panelPage : "min-h-screen bg-[#111111] text-[var(--soft-gray)]"}>
     <main className="mx-auto w-full max-w-md px-4 pt-6 pb-24">
       <header className="mb-5 flex items-center gap-3">
         <Link
           href={backHref}
-          className="flex h-10 w-10 shrink-0 cursor-pointer items-center justify-center rounded-2xl border border-white/10 bg-[#171717] text-[var(--soft-gray)]/88 hover:bg-[#1d1d1d]"
+          className={
+            light
+              ? panelBackBtn
+              : "flex h-10 w-10 shrink-0 cursor-pointer items-center justify-center rounded-2xl border border-white/10 bg-[#171717] text-[var(--soft-gray)]/88 hover:bg-[#1d1d1d]"
+          }
           aria-label="Volver"
         >
           <ChevronLeft className="h-5 w-5" strokeWidth={1.85} />
         </Link>
         <div>
-          <h1 className="font-heading text-[22px] leading-tight text-[var(--premium-gold)]">Cambiar horario</h1>
-          <p className="mt-0.5 text-[12px] text-[var(--soft-gray)]/55">Elegí otro día u hora para el mismo servicio</p>
+          <h1
+            className={
+              light
+                ? "font-heading text-[22px] font-bold leading-tight text-gray-900"
+                : "font-heading text-[22px] leading-tight text-[var(--premium-gold)]"
+            }
+          >
+            Cambiar horario
+          </h1>
+          <p className={`mt-0.5 text-[12px] ${light ? "text-gray-500" : "text-[var(--soft-gray)]/55"}`}>
+            Elegí otro día u hora para el mismo servicio
+          </p>
         </div>
       </header>
 
@@ -352,12 +370,16 @@ export function ReprogramarTurnoClient({
 
       {reservation && movable ? (
         <div className="space-y-5">
-          <section className="rounded-2xl border border-white/8 bg-[#171717] px-4 py-4 shadow-[0_10px_28px_rgba(0,0,0,0.35)]">
-            <p className="text-[16px] font-semibold text-[var(--soft-gray)]">{reservation.treatmentName}</p>
-            <p className="mt-0.5 text-[12px] text-[var(--soft-gray)]/58">{reservation.subtitle}</p>
-            <p className="mt-3 text-[13px] text-[var(--soft-gray)]/55">
+          <section className={light ? `${panelCard} px-4 py-4` : "rounded-2xl border border-white/8 bg-[#171717] px-4 py-4 shadow-[0_10px_28px_rgba(0,0,0,0.35)]"}>
+            <p className={`text-[16px] font-semibold ${light ? "text-gray-900" : "text-[var(--soft-gray)]"}`}>
+              {reservation.treatmentName}
+            </p>
+            <p className={`mt-0.5 text-[12px] ${light ? "text-gray-500" : "text-[var(--soft-gray)]/58"}`}>
+              {reservation.subtitle}
+            </p>
+            <p className={`mt-3 text-[13px] ${light ? "text-gray-600" : "text-[var(--soft-gray)]/55"}`}>
               Turno actual:{" "}
-              <span className="font-semibold text-[var(--premium-gold)]">
+              <span className={`font-semibold ${light ? "text-[#B88E2F]" : "text-[var(--premium-gold)]"}`}>
                 {reservation.timeLocal} · {reservation.displayDate}
               </span>
             </p>
@@ -574,12 +596,17 @@ export function ReprogramarTurnoClient({
             type="button"
             disabled={saving || !timeLocal}
             onClick={() => void handleSave()}
-            className="w-full cursor-pointer rounded-2xl bg-gradient-to-r from-[var(--accent-coral)] to-[var(--accent-orange)] py-3.5 text-[15px] font-bold text-white shadow-[0_10px_28px_rgba(182,75,84,0.35)] transition hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-45"
+            className={
+              light
+                ? panelPrimaryBtn
+                : "w-full cursor-pointer rounded-2xl bg-gradient-to-r from-[var(--accent-coral)] to-[var(--accent-orange)] py-3.5 text-[15px] font-bold text-white shadow-[0_10px_28px_rgba(182,75,84,0.35)] transition hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-45"
+            }
           >
             {saving ? "Guardando…" : "Confirmar nuevo horario"}
           </button>
         </div>
       ) : null}
     </main>
+    </div>
   );
 }

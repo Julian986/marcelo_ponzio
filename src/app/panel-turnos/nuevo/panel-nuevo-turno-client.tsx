@@ -5,6 +5,13 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
 
+import {
+  panelBackBtn,
+  panelCard,
+  panelContainer,
+  panelInput,
+  panelPage,
+} from "@/components/panel/panel-ui";
 import { BookingPicker } from "@/components/booking/booking-picker";
 import {
   SALON_TREATMENT_OPTIONS,
@@ -111,19 +118,15 @@ export function PanelNuevoTurnoClient() {
   }
 
   return (
-    <div className="min-h-screen bg-[#111111] pb-28 text-[var(--soft-gray)]">
-      <div className="mx-auto max-w-md px-4 pt-6">
+    <div className={panelPage}>
+      <div className={`${panelContainer} pt-6`}>
         <header className="mb-5 flex items-center gap-3">
-          <Link
-            href="/panel-turnos"
-            className="flex h-10 w-10 shrink-0 cursor-pointer items-center justify-center rounded-2xl border border-white/10 bg-[#171717] text-[var(--soft-gray)]/88 hover:bg-[#1d1d1d]"
-            aria-label="Volver al panel"
-          >
+          <Link href="/panel-turnos" className={panelBackBtn} aria-label="Volver al panel">
             <ChevronLeft className="h-5 w-5" strokeWidth={1.85} />
           </Link>
           <div>
-            <h1 className="font-heading text-[22px] leading-tight text-[var(--premium-gold)]">Nuevo turno</h1>
-            <p className="mt-0.5 text-[12px] text-[var(--soft-gray)]/55">Alta manual · sin pago</p>
+            <h1 className="font-heading text-[22px] font-bold leading-tight text-gray-900">Nuevo turno</h1>
+            <p className="mt-0.5 text-[12px] text-gray-500">Alta manual · sin pago</p>
           </div>
         </header>
 
@@ -144,16 +147,16 @@ export function PanelNuevoTurnoClient() {
         />
 
         {hasSlot && (
-          <section className="mt-6 space-y-4 rounded-2xl border border-white/8 bg-[#171717] px-4 py-4">
+          <section className={`mt-6 space-y-4 ${panelCard} px-4 py-4`}>
             <div>
-              <p className="text-[11px] tracking-[0.14em] text-[var(--soft-gray)]/55">Datos del cliente</p>
-              <p className="mt-1 text-[12px] text-[var(--soft-gray)]/58">
+              <p className="text-[11px] font-medium uppercase tracking-[0.08em] text-gray-500">Datos del cliente</p>
+              <p className="mt-1 text-[12px] text-gray-600">
                 Turno el {formatSalonDisplayDate(selectedDate)} a las {selectedTime}
               </p>
             </div>
             <div className="space-y-3">
               <div>
-                <label htmlFor="pn-customerName" className="text-[11px] tracking-[0.12em] text-[var(--soft-gray)]/55">
+                <label htmlFor="pn-customerName" className="text-[11px] font-medium text-gray-500">
                   Nombre y apellido
                 </label>
                 <input
@@ -162,11 +165,11 @@ export function PanelNuevoTurnoClient() {
                   autoComplete="name"
                   value={customerName}
                   onChange={(e) => setCustomerName(e.target.value)}
-                  className="mt-1.5 w-full rounded-xl border border-white/10 bg-[#141414] px-3 py-3 text-[15px] text-[var(--soft-gray)] outline-none placeholder:text-[var(--soft-gray)]/35 focus:border-[var(--premium-gold)]/55"
+                  className={panelInput}
                 />
               </div>
               <div>
-                <label htmlFor="pn-customerPhone" className="text-[11px] tracking-[0.12em] text-[var(--soft-gray)]/55">
+                <label htmlFor="pn-customerPhone" className="text-[11px] font-medium text-gray-500">
                   WhatsApp
                 </label>
                 <input
@@ -179,27 +182,25 @@ export function PanelNuevoTurnoClient() {
                   onChange={(e) => setCustomerPhone(e.target.value)}
                   placeholder="Ej: +54 9 11 2345-6789"
                   aria-invalid={showWhatsappInvalidHint}
-                  className={`mt-1.5 w-full rounded-xl border bg-[#141414] px-3 py-3 text-[15px] text-[var(--soft-gray)] outline-none placeholder:text-[var(--soft-gray)]/35 focus:border-[var(--premium-gold)]/55 ${
-                    showWhatsappInvalidHint ? "border-amber-500/45" : "border-white/10"
+                  className={`${panelInput} ${
+                    showWhatsappInvalidHint ? "border-amber-400" : ""
                   }`}
                 />
                 {showWhatsappInvalidHint ? (
-                  <p className="mt-1 text-[11px] text-amber-200/90">Revisá el número (10–15 dígitos).</p>
+                  <p className="mt-1 text-[11px] text-amber-700">Revisá el número (10–15 dígitos).</p>
                 ) : null}
               </div>
-              <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-white/8 bg-black/20 px-3 py-3">
+              <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-gray-200 bg-gray-50 px-3 py-3">
                 <input
                   type="checkbox"
                   checked={whatsappOptIn}
                   onChange={(e) => setWhatsappOptIn(e.target.checked)}
-                  className="mt-1 h-4 w-4 shrink-0 rounded border-white/20 accent-[var(--premium-gold)]"
+                  className="mt-1 h-4 w-4 shrink-0 rounded border-gray-300 accent-[#B88E2F]"
                 />
-                <span className="text-[12px] leading-snug text-[var(--soft-gray)]/78">
-                  Recordatorios por WhatsApp
-                </span>
+                <span className="text-[12px] leading-snug text-gray-600">Recordatorios por WhatsApp</span>
               </label>
               <div>
-                <label htmlFor="pn-notes" className="text-[11px] tracking-[0.12em] text-[var(--soft-gray)]/55">
+                <label htmlFor="pn-notes" className="text-[11px] font-medium text-gray-500">
                   Notas internas (opcional)
                 </label>
                 <textarea
@@ -209,7 +210,7 @@ export function PanelNuevoTurnoClient() {
                   value={panelNotes}
                   onChange={(e) => setPanelNotes(e.target.value)}
                   placeholder="Solo visible en el sistema…"
-                  className="mt-1.5 w-full resize-none rounded-xl border border-white/10 bg-[#141414] px-3 py-3 text-[14px] text-[var(--soft-gray)] outline-none placeholder:text-[var(--soft-gray)]/35 focus:border-[var(--premium-gold)]/55"
+                  className={`${panelInput} resize-none text-[14px]`}
                 />
               </div>
             </div>
@@ -217,7 +218,7 @@ export function PanelNuevoTurnoClient() {
             {error ? (
               <p
                 role="alert"
-                className="rounded-xl border border-red-500/35 bg-red-950/35 px-3 py-2.5 text-center text-[12px] text-red-200/95"
+                className="rounded-xl border border-red-200 bg-red-50 px-3 py-2.5 text-center text-[12px] text-red-700"
               >
                 {error}
               </p>
@@ -227,10 +228,10 @@ export function PanelNuevoTurnoClient() {
               type="button"
               disabled={!datosComplete || submitting}
               onClick={() => void handleSubmit()}
-              className={`flex h-[50px] w-full items-center justify-center rounded-xl text-[15px] font-semibold transition-all ${
+              className={`flex h-[50px] w-full items-center justify-center rounded-full text-[15px] font-semibold transition-all ${
                 datosComplete && !submitting
-                  ? "cursor-pointer bg-gradient-to-br from-[var(--accent-coral)] to-[var(--accent-orange)] text-white shadow-[0_8px_24px_rgba(182,75,84,0.35)]"
-                  : "cursor-not-allowed bg-[#2a2a2a] text-white/40"
+                  ? "cursor-pointer bg-[#B88E2F] text-white shadow-md active:scale-[0.98]"
+                  : "cursor-not-allowed bg-gray-200 text-gray-400"
               }`}
             >
               {submitting ? "Guardando…" : "Confirmar turno"}

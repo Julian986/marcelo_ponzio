@@ -39,7 +39,7 @@ export function ConfirmadoIrPerfilButton({ phone }: Props) {
       type="button"
       onClick={handleClick}
       disabled={loading}
-      className="mt-6 flex h-[52px] w-full cursor-pointer items-center justify-center gap-2 rounded-full bg-gradient-to-r from-[var(--accent-orange)] to-[var(--premium-gold)] text-[19px] font-heading text-white disabled:cursor-default disabled:opacity-70"
+      className="mt-6 flex h-[52px] w-full cursor-pointer items-center justify-center gap-2 rounded-full bg-[#B88E2F] text-[17px] font-semibold text-white shadow-md transition active:scale-[0.98] disabled:cursor-default disabled:opacity-70"
     >
       {loading ? "Ingresando a perfil..." : "Ir a perfil"}
     </button>
