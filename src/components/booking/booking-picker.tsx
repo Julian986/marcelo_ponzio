@@ -76,7 +76,7 @@ export function BookingPicker({
   comboAlertText,
   wizardSection,
 }: BookingPickerProps) {
-  const isLight = bookingContext === "public";
+  const isLight = bookingContext === "public" || bookingContext === "panel";
   const [visibleMonthDate, setVisibleMonthDate] = useState(() => {
     const today = new Date();
     if (bookingContext === "panel") {

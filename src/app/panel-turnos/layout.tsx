@@ -6,5 +6,5 @@ export const metadata: Metadata = {
 };
 
 export default function PanelTurnosLayout({ children }: { children: React.ReactNode }) {
-  return children;
+  return <div className="min-h-screen bg-white text-gray-900 antialiased">{children}</div>;
 }
