@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Analytics } from "@vercel/analytics/next";
 import { Montserrat, Playfair_Display } from "next/font/google";
 import { headers } from "next/headers";
 import { BRAND_LOGO_SRC } from "@/components/brand-logo";
@@ -86,6 +87,7 @@ export default function RootLayout({
         className={`${montserrat.variable} ${playfair.variable} min-h-screen bg-[#111111] text-white antialiased`}
       >
         <GoogleAnalytics />
+        <Analytics />
         {children}
       </body>
     </html>

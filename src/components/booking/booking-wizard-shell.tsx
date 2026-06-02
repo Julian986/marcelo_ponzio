@@ -9,6 +9,7 @@ type BookingWizardShellProps = {
   title: string;
   subtitle: string;
   summary?: ReactNode;
+  closeHref?: string;
   children: ReactNode;
   continueLabel: string;
   onContinue: () => void;
@@ -22,6 +23,7 @@ export function BookingWizardShell({
   title,
   subtitle,
   summary,
+  closeHref = "/",
   children,
   continueLabel,
   onContinue,
@@ -35,7 +37,7 @@ export function BookingWizardShell({
         <button type="button" onClick={onBack} aria-label="Volver" className="cursor-pointer p-1">
           <ArrowLeft className="h-6 w-6" strokeWidth={2} />
         </button>
-        <Link href="/" className="text-lg font-normal text-gray-500">
+        <Link href={closeHref} className="text-lg font-normal text-gray-500">
           Cerrar
         </Link>
       </header>
