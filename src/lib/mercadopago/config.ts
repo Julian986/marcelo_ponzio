@@ -4,7 +4,7 @@ export function getMercadoPagoAccessToken(): string {
     throw new Error("MERCADOPAGO_ACCESS_TOKEN no está definida");
   }
   return t;
-} //Esto
+} 
 
 /** URL pública https sin barra final (ej. https://tudominio.com) */
 export function getAppBaseUrl(): string {
