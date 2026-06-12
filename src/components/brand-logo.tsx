@@ -5,6 +5,8 @@ export const BRAND_LOGO_SRC = "/logo_marce.png";
 
 const sizeClass = {
   splash: "h-52 w-52 max-h-[min(56vw,280px)] max-w-[min(56vw,280px)] sm:h-[15rem] sm:w-[15rem] sm:max-h-[300px] sm:max-w-[300px]",
+  /** Home con foto de fondo — más chico que header para no empujar el CTA */
+  home: "h-[6.25rem] w-[6.25rem]",
   header: "h-[7.25rem] w-[7.25rem]",
   /** Cabeceras de página secundarias */
   page: "h-28 w-28",

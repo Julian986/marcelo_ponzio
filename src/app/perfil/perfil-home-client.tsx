@@ -1,6 +1,6 @@
 ﻿"use client";
 
-import { CalendarDays, ChevronRight, Clock3, Percent, Sparkles } from "lucide-react";
+import { CalendarDays, ChevronRight, Clock3, Percent, Phone, Sparkles } from "lucide-react";
 import Link from "next/link";
 import { useMemo, useState } from "react";
 
@@ -109,6 +109,13 @@ export function PerfilHomeClient() {
       subtitle: "Beneficios del mes",
       trackLabel: "promociones",
       Icon: Percent,
+    },
+    {
+      href: "/contacto",
+      title: "Contacto",
+      subtitle: "WhatsApp, ubicación e Instagram",
+      trackLabel: "contacto",
+      Icon: Phone,
     },
   ];
 
