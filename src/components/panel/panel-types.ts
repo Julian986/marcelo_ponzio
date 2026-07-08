@@ -11,10 +11,14 @@ export type PanelReservation = {
   customerPhone: string;
   reservationStatus: string;
   paymentStatus: string;
-  cancelledBy?: "panel" | "customer" | null;
+  cancelledBy?: "panel" | "customer" | "whatsapp" | null;
   source?: string;
   startsAt: string;
   createdAt: string;
+  /** ISO: recordatorio 24h enviado (cron). */
+  waReminder24hSentAt?: string | null;
+  /** ISO: confirmó asistencia respondiendo el recordatorio. */
+  waAttendanceConfirmedAt?: string | null;
 };
 
 export type PanelAgendaBlock = {

@@ -4,6 +4,7 @@ import { forwardRef } from "react";
 import {
   CalendarClock,
   Check,
+  Circle,
   FileText,
   MessageCircle,
   Scissors,
@@ -66,6 +67,72 @@ function statusChip(reservation: PanelReservation, inProgress: boolean) {
     badgeClass: "bg-emerald-50 text-emerald-800 ring-1 ring-emerald-200",
     showCheck: true,
   };
+}
+
+function formatWaTimestamp(iso: string): string {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return "";
+  return new Intl.DateTimeFormat("es-AR", {
+    day: "numeric",
+    month: "short",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  }).format(d);
+}
+
+function WhatsAppTrackingBlock({ reservation: r }: { reservation: PanelReservation }) {
+  if (r.reservationStatus === "cancelled") {
+    if (r.cancelledBy === "whatsapp") {
+      return (
+        <p className="mt-3 rounded-xl bg-red-50 px-3 py-2 text-[13px] leading-snug text-red-800">
+          Canceló el turno respondiendo al recordatorio por WhatsApp.
+        </p>
+      );
+    }
+    return null;
+  }
+
+  if (r.reservationStatus !== "confirmed" && r.reservationStatus !== "pending_payment") {
+    return null;
+  }
+
+  const reminderSent = Boolean(r.waReminder24hSentAt);
+  const attendanceConfirmed = Boolean(r.waAttendanceConfirmedAt);
+  const reminderWhen = r.waReminder24hSentAt ? formatWaTimestamp(r.waReminder24hSentAt) : "";
+  const attendanceWhen = r.waAttendanceConfirmedAt ? formatWaTimestamp(r.waAttendanceConfirmedAt) : "";
+
+  return (
+    <div className="mt-3 space-y-1.5 rounded-xl border border-gray-100 bg-gray-50 px-3 py-2.5">
+      <p className="text-[11px] font-semibold tracking-[0.08em] text-gray-500 uppercase">WhatsApp</p>
+      <div className="flex items-start gap-2 text-[13px] leading-snug">
+        {reminderSent ? (
+          <Check className="mt-0.5 h-4 w-4 shrink-0 text-emerald-600" strokeWidth={2.5} />
+        ) : (
+          <Circle className="mt-0.5 h-4 w-4 shrink-0 text-gray-300" strokeWidth={2} />
+        )}
+        <p className={reminderSent ? "text-gray-800" : "text-gray-500"}>
+          <span className="font-medium">Recordatorio 24h:</span>{" "}
+          {reminderSent ? `Enviado${reminderWhen ? ` · ${reminderWhen}` : ""}` : "Aún no enviado"}
+        </p>
+      </div>
+      <div className="flex items-start gap-2 text-[13px] leading-snug">
+        {attendanceConfirmed ? (
+          <Check className="mt-0.5 h-4 w-4 shrink-0 text-emerald-600" strokeWidth={2.5} />
+        ) : (
+          <Circle className="mt-0.5 h-4 w-4 shrink-0 text-gray-300" strokeWidth={2} />
+        )}
+        <p className={attendanceConfirmed ? "text-gray-800" : "text-gray-500"}>
+          <span className="font-medium">Asistencia:</span>{" "}
+          {attendanceConfirmed
+            ? `Confirmó${attendanceWhen ? ` · ${attendanceWhen}` : ""}`
+            : reminderSent
+              ? "Sin confirmar"
+              : "Pendiente (tras el recordatorio)"}
+        </p>
+      </div>
+    </div>
+  );
 }
 
 export const PanelReservationCard = forwardRef<HTMLElement, PanelReservationCardProps>(
@@ -165,6 +232,8 @@ export const PanelReservationCard = forwardRef<HTMLElement, PanelReservationCard
               {chip.badge}
             </span>
           </div>
+
+          <WhatsAppTrackingBlock reservation={r} />
         </div>
 
         {canManage ? (

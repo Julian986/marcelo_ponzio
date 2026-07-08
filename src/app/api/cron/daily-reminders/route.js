@@ -3,22 +3,11 @@ import { formatInTimeZone, fromZonedTime } from "date-fns-tz";
 import { NextResponse } from "next/server";
 
 import { getDb } from "@/lib/mongodb";
-import { getTwilioClient } from "@/lib/twilio";
+import { buildTwilioWhatsAppSendParams, getTwilioClient } from "@/lib/twilio";
+import { normalizeToWhatsAppE164 } from "@/lib/whatsapp/twilio-phone";
+import { insertWhatsappOutboundLog } from "@/lib/whatsapp/whatsapp-logs";
 
 const TZ = "America/Argentina/Buenos_Aires";
-
-function normalizeTo(to) {
-  // normaliza a +549 para celulares argentinos
-  let phone = String(to ?? "").replace(/\D/g, ""); // saca espacios
-  if (!phone) throw new Error("reservation.customerPhone inválido");
-  if (phone.startsWith("549")) phone = phone;
-  else if (phone.startsWith("54")) phone = `549${phone.slice(2)}`;
-  else if (phone.startsWith("9")) phone = `54${phone}`;
-  else phone = `549${phone}`;
-
-  const toWhatsApp = `whatsapp:+${phone}`;
-  return toWhatsApp;
-}
 
 function buildTomorrowRangeInArgentina(now = new Date()) {
   const todayKey = formatInTimeZone(now, TZ, "yyyy-MM-dd");
@@ -40,9 +29,9 @@ export async function GET(request) {
       return NextResponse.json({ error: "No autorizado" }, { status: 401 });
     }
 
-    if (!process.env.TWILIO_WHATSAPP_FROM) {
+    if (!process.env.TWILIO_WHATSAPP_FROM && !process.env.TWILIO_MESSAGING_SERVICE_SID?.trim()) {
       return NextResponse.json(
-        { error: "Falta variable de entorno: TWILIO_WHATSAPP_FROM" },
+        { error: "Falta TWILIO_WHATSAPP_FROM o TWILIO_MESSAGING_SERVICE_SID" },
         { status: 500 },
       );
     }
@@ -53,8 +42,8 @@ export async function GET(request) {
     );
     const db = await getDb();
     const reservationsCol = db.collection("reservations");
-    const logsCol = db.collection("whatsapp_logs");
     const client = getTwilioClient();
+    const sendParams = await buildTwilioWhatsAppSendParams(client);
 
     const reservations = await reservationsCol
       .find({
@@ -89,27 +78,31 @@ export async function GET(request) {
         continue;
       }
 
+      const reservationId = reservation._id.toHexString();
+
       try {
         const nombre = reservation.customerName ?? "";
         const servicio = reservation.treatmentName ?? "";
         const fecha = formatInTimeZone(reservation.startsAt, TZ, "dd/MM/yyyy");
-        const hora = formatInTimeZone(reservation.startsAt, TZ, "HH:mm");
+        const hora =
+          (typeof reservation.timeLocal === "string" && reservation.timeLocal.trim()) ||
+          formatInTimeZone(reservation.startsAt, TZ, "HH:mm");
 
+        const templateVariables = { nombre, servicio, fecha, hora };
         const twilioResponse = await client.messages.create({
-          from: process.env.TWILIO_WHATSAPP_FROM,
-          to: normalizeTo(reservation.customerPhone),
+          ...sendParams,
+          to: normalizeToWhatsAppE164(reservation.customerPhone),
           contentSid: process.env.TWILIO_REMINDER_CONTENT_SID,
           contentVariables: JSON.stringify({ "1": nombre, "2": servicio, "3": fecha, "4": hora }),
         });
 
-        await logsCol.insertOne({
+        await insertWhatsappOutboundLog(db, {
+          reservationId,
           to: reservation.customerPhone,
-          message: "",
           sid: twilioResponse.sid,
           status: twilioResponse.status,
           template: process.env.TWILIO_REMINDER_CONTENT_SID ?? null,
-          templateVariables: { nombre, servicio, fecha, hora },
-          createdAt: new Date(),
+          templateVariables,
         });
 
         sent += 1;
@@ -121,12 +114,12 @@ export async function GET(request) {
           { $set: { waReminder24hSentAt: null } },
         );
 
-        await logsCol.insertOne({
-          to: reservation.customerPhone ?? null,
-          message: "",
+        await insertWhatsappOutboundLog(db, {
+          reservationId,
+          to: reservation.customerPhone ?? "",
           sid: null,
           status: "failed",
-          createdAt: new Date(),
+          template: process.env.TWILIO_REMINDER_CONTENT_SID ?? null,
           error: error instanceof Error ? error.message : "Error desconocido",
         });
       }
