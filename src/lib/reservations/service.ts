@@ -794,3 +794,36 @@ export async function expirePendingReservations(db: Db): Promise<number> {
   );
   return r.modifiedCount;
 }
+
+const TECHNICAL_NOTE_MAX = 4000;
+
+/** Guarda o borra la ficha técnica de una visita (solo panel). */
+export async function setReservationTechnicalNote(
+  db: Db,
+  reservationHexId: string,
+  note: string,
+): Promise<{ ok: true } | { error: string; code?: string }> {
+  const hex = reservationHexId.trim();
+  const doc = await findReservationByHexId(db, hex);
+  if (!doc) {
+    return { error: "Turno no encontrado.", code: "NOT_FOUND" };
+  }
+
+  const trimmed = note.trim();
+  if (trimmed.length > TECHNICAL_NOTE_MAX) {
+    return { error: `La nota no puede superar ${TECHNICAL_NOTE_MAX} caracteres.`, code: "TOO_LONG" };
+  }
+
+  const now = new Date();
+  await db.collection<ReservationDoc>(COLLECTION).updateOne(
+    { _id: doc._id },
+    {
+      $set: {
+        technicalNote: trimmed.length > 0 ? trimmed : null,
+        updatedAt: now,
+      },
+    },
+  );
+
+  return { ok: true };
+}

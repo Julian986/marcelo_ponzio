@@ -6,6 +6,7 @@ import {
   ChevronRight,
   Lock,
   Plus,
+  Users,
 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -305,6 +306,15 @@ export function PanelTurnosDashboard() {
               Bloquear horario
             </Link>
           </div>
+
+          <Link
+            href="/panel-turnos/clientes"
+            onClick={() => trackPanelClick("clientes_open_list")}
+            className="mt-3 flex h-12 cursor-pointer items-center justify-center gap-2 rounded-2xl border border-gray-200 bg-white text-[14px] font-semibold text-gray-800 shadow-sm transition hover:border-[#B88E2F]/30 hover:bg-gray-50"
+          >
+            <Users className="h-5 w-5 text-[#B88E2F]" strokeWidth={2.2} />
+            Clientes
+          </Link>
         </header>
 
         <section className={`mt-5 ${panelCard} p-4`}>

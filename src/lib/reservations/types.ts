@@ -56,6 +56,8 @@ export type ReservationDoc = {
   createdBy?: string | null;
   /** Notas internas solo para reservas cargadas desde el panel. */
   panelNotes?: string | null;
+  /** Ficha técnica de la visita (panel): fórmulas, detalles del servicio, etc. */
+  technicalNote?: string | null;
   createdAt: Date;
   updatedAt: Date;
   /** Secreto de un solo uso para crear la preferencia Checkout Pro (no es password del usuario). */
