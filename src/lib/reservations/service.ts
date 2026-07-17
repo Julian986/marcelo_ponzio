@@ -10,6 +10,11 @@ import {
 } from "@/lib/booking/compute-bookable-slots";
 import { formatSalonDisplayDate } from "@/lib/booking/salon-availability";
 import { canonicalPhoneDigitsAR, customerPhoneDigitsQueryValues } from "@/lib/customer/phone-canonical-ar";
+import {
+  reservationDocRequiresMarceloSoloStartGap,
+  reservationWouldViolateMarceloSoloStartGap,
+  treatmentIdsRequireMarceloSoloStartGap,
+} from "@/lib/booking/marcelo-solo-start-gap";
 import { isPublicLeadTimeViolated } from "@/lib/booking/public-slot-lead";
 import { reservationWouldExceedSalonCapacity, slotIntervalMs } from "@/lib/booking/slot-overlap";
 import { SALON_TREATMENTS, findSalonTreatmentById, type SalonTreatment } from "@/lib/treatments/catalog";
@@ -209,6 +214,16 @@ async function validatePublicTurnosReservation(
       code: "SLOT_OVERLAP",
     };
   }
+  if (
+    treatmentIdsRequireMarceloSoloStartGap(serviceItems.map((s) => s.treatmentId)) &&
+    (await reservationWouldViolateMarceloSoloStartGap(db, input.dateKey, interval.startMs))
+  ) {
+    return {
+      ok: false,
+      error: "Balayage y reflejos papel necesitan al menos 60 minutos entre inicios. Elegí otro horario.",
+      code: "SLOT_UNAVAILABLE",
+    };
+  }
 
   return { ok: true, startsAt, now, primaryTreatment, serviceItems, totalDurationMinutes, isCombo };
 }
@@ -404,6 +419,15 @@ export async function insertPanelReservation(
       code: "SLOT_OVERLAP",
     };
   }
+  if (
+    treatmentIdsRequireMarceloSoloStartGap([treatment.id]) &&
+    (await reservationWouldViolateMarceloSoloStartGap(db, dateKey, interval.startMs))
+  ) {
+    return {
+      error: "Balayage y reflejos papel necesitan al menos 60 minutos entre inicios. Elegí otro horario.",
+      code: "SLOT_UNAVAILABLE",
+    };
+  }
 
   let panelNotes: string | null = null;
   if (input.panelNotes != null && String(input.panelNotes).trim()) {
@@ -550,17 +574,29 @@ export async function rescheduleReservation(
     typeof doc.durationMinutes === "number" && Number.isFinite(doc.durationMinutes) && doc.durationMinutes > 0
       ? doc.durationMinutes
       : catalog?.durationMinutes ?? 60;
+  const serviceIdsFromDoc = Array.isArray(doc.serviceItems)
+    ? doc.serviceItems.map((s) => String(s.treatmentId ?? "").trim()).filter(Boolean)
+    : [];
 
   const slotScope: BookingSlotScope =
     input.actor === "panel" ? "panel" : doc.source === "panel" ? "panel" : "public";
 
-  const allowed = await computeBookableSlots(db, {
-    dateKey: newKey,
-    treatmentId,
-    now: input.now,
-    scope: slotScope,
-    excludeReservationHexId: hex,
-  });
+  const allowed =
+    serviceIdsFromDoc.length > 1
+      ? await computeBookableSlotsForTreatmentIds(db, {
+          dateKey: newKey,
+          treatmentIds: serviceIdsFromDoc,
+          now: input.now,
+          scope: slotScope,
+          excludeReservationHexId: hex,
+        })
+      : await computeBookableSlots(db, {
+          dateKey: newKey,
+          treatmentId,
+          now: input.now,
+          scope: slotScope,
+          excludeReservationHexId: hex,
+        });
   if (!allowed.includes(newTime)) {
     return { error: "Ese horario no está disponible para este servicio.", code: "SLOT_UNAVAILABLE" };
   }
@@ -581,6 +617,15 @@ export async function rescheduleReservation(
     return {
       error: "Ese horario ya no está disponible (cupos llenos en esa franja).",
       code: "SLOT_OVERLAP",
+    };
+  }
+  if (
+    reservationDocRequiresMarceloSoloStartGap(doc) &&
+    (await reservationWouldViolateMarceloSoloStartGap(db, newKey, interval.startMs, excludeOid))
+  ) {
+    return {
+      error: "Balayage y reflejos papel necesitan al menos 60 minutos entre inicios. Elegí otro horario.",
+      code: "SLOT_UNAVAILABLE",
     };
   }
 

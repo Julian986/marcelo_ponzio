@@ -4,6 +4,12 @@ import { ObjectId as ObjectIdCtor } from "mongodb";
 import { buildCapGetterForDate } from "@/lib/booking/agenda-blocks";
 import { getAvailableTimesForDate, filterSlotsServiceEndsOnOrBeforeClose } from "@/lib/booking/salon-availability";
 import { getPublicBookableTimeSlots } from "@/lib/booking/public-slot-lead";
+import {
+  filterSlotsByMarceloSoloStartGap,
+  isMarceloSoloTreatmentId,
+  loadMarceloSoloStartMs,
+  treatmentIdsRequireMarceloSoloStartGap,
+} from "@/lib/booking/marcelo-solo-start-gap";
 import { KERATINA_ONLY_TIME_LOCAL, filterPublicSlotsByTreatmentRules } from "@/lib/booking/treatment-slot-rules";
 import { filterSlotsBySalonCapacity, loadBusyIntervalsMs } from "@/lib/booking/slot-overlap";
 import { findSalonTreatmentById } from "@/lib/treatments/catalog";
@@ -46,7 +52,12 @@ export async function computeBookableSlots(
   slots = filterPublicSlotsByTreatmentRules(treatment.id, slots, params.dateKey);
   const busy = await loadBusyIntervalsMs(db, params.dateKey, excludeId);
   const capGetter = await buildCapGetterForDate(db, params.dateKey);
-  return filterSlotsBySalonCapacity(slots, params.dateKey, treatment.durationMinutes, busy, capGetter);
+  slots = filterSlotsBySalonCapacity(slots, params.dateKey, treatment.durationMinutes, busy, capGetter);
+  if (isMarceloSoloTreatmentId(treatment.id)) {
+    const soloStarts = await loadMarceloSoloStartMs(db, params.dateKey, excludeId);
+    slots = filterSlotsByMarceloSoloStartGap(slots, params.dateKey, soloStarts);
+  }
+  return slots;
 }
 
 /**
@@ -117,5 +128,10 @@ export async function computeBookableSlotsForTreatmentIds(
   }
   const busy = await loadBusyIntervalsMs(db, params.dateKey, excludeId);
   const capGetter = await buildCapGetterForDate(db, params.dateKey);
-  return filterSlotsBySalonCapacity(slots, params.dateKey, totalDuration, busy, capGetter);
+  slots = filterSlotsBySalonCapacity(slots, params.dateKey, totalDuration, busy, capGetter);
+  if (treatmentIdsRequireMarceloSoloStartGap(ids)) {
+    const soloStarts = await loadMarceloSoloStartMs(db, params.dateKey, excludeId);
+    slots = filterSlotsByMarceloSoloStartGap(slots, params.dateKey, soloStarts);
+  }
+  return slots;
 }
