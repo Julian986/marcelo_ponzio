@@ -1,6 +1,8 @@
+import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 
 import { getDb } from "@/lib/mongodb";
+import { verifyPanelCookie } from "@/lib/panel-turnos-auth";
 import { getTwilioClient } from "@/lib/twilio";
 
 function normalizeTo(to) {
@@ -41,6 +43,11 @@ export function OPTIONS() {
 }
 
 export async function POST(request) {
+  const cookieStore = await cookies();
+  if (!verifyPanelCookie(cookieStore.get("panel_turnos_auth")?.value)) {
+    return NextResponse.json({ error: "No autorizado." }, { status: 401 });
+  }
+
   let to = "";
   let nombre = "";
   let servicio = "";
