@@ -525,9 +525,10 @@ export default function TurnosClient({ initialTreatment = "" }: TurnosClientProp
   const summaryBar =
     wizardStep === 1 ? (
       <>
-        <span className="min-w-0 flex-1 text-sm font-medium text-gray-700">
-          {selectedServiceIds.length} seleccionado{selectedServiceIds.length === 1 ? "" : "s"} · Duración{" "}
-          {totalSelectedDurationMinutes} min
+        <span className="min-w-0 flex-1 truncate text-sm font-medium text-gray-700">
+          {selectedServiceIds.length > 0
+            ? `${selectedServicesSummary} · ${totalSelectedDurationMinutes} min`
+            : "Elegí un servicio"}
         </span>
         {selectedServiceIds.length > 0 ? (
           <button

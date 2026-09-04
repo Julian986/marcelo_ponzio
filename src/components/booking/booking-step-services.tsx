@@ -15,12 +15,20 @@ type BookingStepServicesProps = {
   comboAlertText?: string | null;
 };
 
+function categoryOfFirstSelected(selectedServiceIds: string[]): TreatmentCategory | null {
+  const firstId = selectedServiceIds[0];
+  if (!firstId) return null;
+  return SALON_TREATMENT_OPTIONS.find((option) => option.id === firstId)?.category ?? null;
+}
+
 export function BookingStepServices({
   selectedServiceIds,
   onToggleTreatmentId,
   comboAlertText,
 }: BookingStepServicesProps) {
-  const [activeCategory, setActiveCategory] = useState<TreatmentCategory | null>(null);
+  const [activeCategory, setActiveCategory] = useState<TreatmentCategory | null>(() =>
+    categoryOfFirstSelected(selectedServiceIds),
+  );
 
   const categoryTreatments = useMemo(
     () =>
