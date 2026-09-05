@@ -8,11 +8,13 @@ import {
   SALON_TREATMENT_OPTIONS,
 } from "@/lib/booking/salon-availability";
 import type { TreatmentCategory } from "@/lib/treatments/catalog";
+import type { ExperienceFamily } from "@/lib/treatments/experience-packages";
 
 type BookingStepServicesProps = {
   selectedServiceIds: string[];
   onToggleTreatmentId: (id: string) => void;
   comboAlertText?: string | null;
+  promoFamily?: ExperienceFamily | null;
 };
 
 function categoryOfFirstSelected(selectedServiceIds: string[]): TreatmentCategory | null {
@@ -21,22 +23,42 @@ function categoryOfFirstSelected(selectedServiceIds: string[]): TreatmentCategor
   return SALON_TREATMENT_OPTIONS.find((option) => option.id === firstId)?.category ?? null;
 }
 
+function sortTreatmentsForPromo(
+  treatments: typeof SALON_TREATMENT_OPTIONS,
+  promoFamily?: ExperienceFamily | null,
+) {
+  if (!promoFamily) return treatments;
+  return [...treatments].sort((a, b) => {
+    const ae = a.experienceFamily === promoFamily ? 0 : a.experienceFamily ? 1 : 2;
+    const be = b.experienceFamily === promoFamily ? 0 : b.experienceFamily ? 1 : 2;
+    return ae - be;
+  });
+}
+
 export function BookingStepServices({
   selectedServiceIds,
   onToggleTreatmentId,
   comboAlertText,
+  promoFamily = null,
 }: BookingStepServicesProps) {
-  const [activeCategory, setActiveCategory] = useState<TreatmentCategory | null>(() =>
-    categoryOfFirstSelected(selectedServiceIds),
-  );
+  const [activeCategory, setActiveCategory] = useState<TreatmentCategory | null>(() => {
+    if (promoFamily) return "Color";
+    return categoryOfFirstSelected(selectedServiceIds);
+  });
 
-  const categoryTreatments = useMemo(
-    () =>
-      activeCategory
-        ? SALON_TREATMENT_OPTIONS.filter((option) => option.category === activeCategory)
-        : [],
-    [activeCategory],
-  );
+  const categoryTreatments = useMemo(() => {
+    const list = activeCategory
+      ? SALON_TREATMENT_OPTIONS.filter((option) => option.category === activeCategory)
+      : [];
+    return sortTreatmentsForPromo(list, promoFamily);
+  }, [activeCategory, promoFamily]);
+
+  const promoHint =
+    promoFamily === "color-experience"
+      ? "Color Experience: elegí Essential, Signature o Premium."
+      : promoFamily === "balayage-experience"
+        ? "Balayage Experience: elegí Essential, Signature o Premium."
+        : null;
 
   if (activeCategory) {
     return (
@@ -50,6 +72,12 @@ export function BookingStepServices({
           Volver a categorías
         </button>
 
+        {promoHint && activeCategory === "Color" ? (
+          <p className="rounded-2xl border border-[#B88E2F]/35 bg-[#B88E2F]/10 px-4 py-3 text-center text-[15px] leading-snug text-gray-900">
+            {promoHint}
+          </p>
+        ) : null}
+
         {comboAlertText ? (
           <div className="rounded-2xl border border-amber-300 bg-amber-50 px-4 py-3 text-center text-[16px] text-gray-900">
             {comboAlertText}
@@ -58,6 +86,7 @@ export function BookingStepServices({
 
         {categoryTreatments.map((treatment) => {
           const isSelected = selectedServiceIds.includes(treatment.id);
+          const isPromoFocus = Boolean(promoFamily && treatment.experienceFamily === promoFamily);
           return (
             <button
               key={treatment.id}
@@ -66,11 +95,25 @@ export function BookingStepServices({
               className={`flex w-full cursor-pointer flex-col rounded-[24px] border p-6 text-left shadow-[0_4px_20px_rgba(0,0,0,0.05)] transition-all active:scale-[0.99] ${
                 isSelected
                   ? "border-[#B88E2F] bg-[#B88E2F]/10 ring-2 ring-[#B88E2F]/20"
-                  : "border-gray-50 bg-white"
+                  : isPromoFocus
+                    ? "border-[#B88E2F]/40 bg-white"
+                    : "border-gray-50 bg-white"
               }`}
             >
+              {treatment.badge ? (
+                <span className="mb-2 inline-flex w-fit rounded-full bg-[#B88E2F] px-3 py-1 text-[12px] font-semibold uppercase tracking-wide text-white">
+                  {treatment.badge}
+                </span>
+              ) : treatment.experienceFamily ? (
+                <span className="mb-2 inline-flex w-fit rounded-full bg-gray-100 px-3 py-1 text-[12px] font-semibold uppercase tracking-wide text-gray-600">
+                  Promo
+                </span>
+              ) : null}
               <h2 className="text-xl font-semibold text-gray-900">{treatment.name}</h2>
               <p className="mt-1 text-[#666666]">{treatment.subtitle}</p>
+              {treatment.priceLabel ? (
+                <p className="mt-2 text-[16px] font-semibold text-gray-900">{treatment.priceLabel}</p>
+              ) : null}
               {isSelected ? (
                 <span className="mt-3 inline-flex w-fit rounded-full bg-[#B88E2F] px-3 py-1 text-[14px] font-semibold text-white">
                   Seleccionado

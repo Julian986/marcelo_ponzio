@@ -16,9 +16,16 @@ import {
 } from "@/lib/booking/salon-availability";
 import { treatmentRequiresPublicDeposit } from "@/lib/reservations/public-deposit";
 import { findSalonTreatmentById } from "@/lib/treatments/catalog";
+import {
+  exclusivePackageComboError,
+  isExclusivePackageId,
+  parseExperiencePromoParam,
+  type ExperienceFamily,
+} from "@/lib/treatments/experience-packages";
 
 type TurnosClientProps = {
   initialTreatment?: string;
+  initialPromo?: string;
 };
 
 type MeReservationsResponse = {
@@ -30,7 +37,7 @@ type MeReservationsResponse = {
 };
 const CUSTOMER_PROFILE_CACHE_KEY = "mp_customer_profile_cache";
 
-export default function TurnosClient({ initialTreatment = "" }: TurnosClientProps) {
+export default function TurnosClient({ initialTreatment = "", initialPromo = "" }: TurnosClientProps) {
   const router = useRouter();
   const treatmentParam = (() => {
     try {
@@ -42,6 +49,9 @@ export default function TurnosClient({ initialTreatment = "" }: TurnosClientProp
   const initialMatch = SALON_TREATMENT_OPTIONS.find(
     (option) => option.id === treatmentParam || option.name === treatmentParam,
   );
+  const promoFamily: ExperienceFamily | null = initialMatch
+    ? null
+    : parseExperiencePromoParam(initialPromo);
 
   const [wizardStep, setWizardStep] = useState(1);
   const [selectedTreatmentId, setSelectedTreatmentId] = useState<string>(initialMatch?.id ?? "");
@@ -82,6 +92,10 @@ export default function TurnosClient({ initialTreatment = "" }: TurnosClientProp
     () => selectedServices.map((s) => s.name).join(" + "),
     [selectedServices],
   );
+  const selectedPriceLabel = useMemo(() => {
+    if (selectedServices.length !== 1) return "";
+    return selectedServices[0].priceLabel ?? "";
+  }, [selectedServices]);
   const totalSelectedDurationMinutes = useMemo(
     () =>
       selectedServiceIds.reduce((acc, id) => {
@@ -118,11 +132,11 @@ export default function TurnosClient({ initialTreatment = "" }: TurnosClientProp
       let next: string[];
       if (prev.includes(id)) {
         next = prev.filter((x) => x !== id);
-      } else if (id === "servicio-completo" && prev.length > 0) {
-        setServiceLimitHint("No podés seleccionar Servicio completo porque ya elegiste otros servicios.");
+      } else if (isExclusivePackageId(id) && prev.length > 0) {
+        setServiceLimitHint(exclusivePackageComboError());
         return prev;
-      } else if (prev.includes("servicio-completo")) {
-        setServiceLimitHint("No podés agregar otro servicio porque ya seleccionaste Servicio completo.");
+      } else if (prev.some((x) => isExclusivePackageId(x))) {
+        setServiceLimitHint(exclusivePackageComboError());
         return prev;
       } else if (id !== "keratina" && prev.includes("keratina")) {
         setServiceLimitHint(
@@ -527,7 +541,7 @@ export default function TurnosClient({ initialTreatment = "" }: TurnosClientProp
       <>
         <span className="min-w-0 flex-1 truncate text-sm font-medium text-gray-700">
           {selectedServiceIds.length > 0
-            ? `${selectedServicesSummary} · ${totalSelectedDurationMinutes} min`
+            ? `${selectedServicesSummary}${selectedPriceLabel ? ` · ${selectedPriceLabel}` : ""} · ${totalSelectedDurationMinutes} min`
             : "Elegí un servicio"}
         </span>
         {selectedServiceIds.length > 0 ? (
@@ -583,6 +597,7 @@ export default function TurnosClient({ initialTreatment = "" }: TurnosClientProp
           selectedServiceIds={selectedServiceIds}
           onToggleTreatmentId={toggleServiceId}
           comboAlertText={serviceLimitHint}
+          promoFamily={promoFamily}
         />
       ) : null}
 
@@ -683,6 +698,11 @@ export default function TurnosClient({ initialTreatment = "" }: TurnosClientProp
               <div>
                 <dt className="text-sm text-gray-500">Servicio</dt>
                 <dd className="text-lg font-semibold text-gray-900">{selectedServicesSummary}</dd>
+                {selectedPriceLabel ? (
+                  <p className="mt-1 text-[15px] text-gray-600">
+                    {selectedPriceLabel} · la seña se paga ahora; el resto, en el salón.
+                  </p>
+                ) : null}
               </div>
               <div>
                 <dt className="text-sm text-gray-500">Fecha</dt>

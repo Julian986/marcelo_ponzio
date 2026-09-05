@@ -3,6 +3,7 @@ import {
   TREATMENT_CATEGORIES,
   type TreatmentCategory,
 } from "@/lib/treatments/catalog";
+import { isOfferedTreatmentId } from "@/lib/treatments/experience-packages";
 import { isArgentinaPublicHoliday } from "@/lib/booking/argentina-holidays";
 
 export type SalonTreatmentOption = {
@@ -10,15 +11,23 @@ export type SalonTreatmentOption = {
   name: string;
   subtitle: string;
   category: TreatmentCategory;
+  priceLabel?: string;
+  badge?: string;
+  experienceFamily?: "color-experience" | "balayage-experience";
 };
 
 export const SALON_TREATMENT_CATEGORIES: TreatmentCategory[] = [...TREATMENT_CATEGORIES];
 
-export const SALON_TREATMENT_OPTIONS: SalonTreatmentOption[] = SALON_TREATMENTS.map((t) => ({
+export const SALON_TREATMENT_OPTIONS: SalonTreatmentOption[] = SALON_TREATMENTS.filter((t) =>
+  isOfferedTreatmentId(t.id),
+).map((t) => ({
   id: t.id,
   name: t.name,
   subtitle: t.subtitle,
   category: t.category,
+  priceLabel: t.priceLabel,
+  badge: t.badge,
+  experienceFamily: t.experienceFamily,
 }));
 
 /** Minuto del día (0–24h): el servicio debe *terminar* a esta hora o antes (16:00 = cierre puntual). */

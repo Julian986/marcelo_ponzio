@@ -13,6 +13,7 @@ import {
   TREATMENT_CATEGORIES,
   type TreatmentCategory,
 } from "@/lib/treatments/catalog";
+import { isOfferedTreatmentId } from "@/lib/treatments/experience-packages";
 
 function CategoryIcon({ category }: { category: TreatmentCategory }) {
   const cls = "h-8 w-8 text-[#B88E2F]";
@@ -27,7 +28,10 @@ export function TratamientosClient() {
   const [activeCategory, setActiveCategory] = useState<TreatmentCategory>("Cortes y peinado");
 
   const filteredServices = useMemo(
-    () => SALON_TREATMENTS.filter((service) => service.category === activeCategory),
+    () =>
+      SALON_TREATMENTS.filter(
+        (service) => service.category === activeCategory && isOfferedTreatmentId(service.id),
+      ),
     [activeCategory],
   );
 
@@ -77,12 +81,20 @@ export function TratamientosClient() {
 
               <div className="flex min-h-0 flex-1 flex-col px-3 pb-3 pt-2">
                 <h2 className="text-[17px] font-semibold leading-tight font-heading text-gray-900">{service.name}</h2>
+                {service.badge ? (
+                  <p className="mt-1 text-[12px] font-semibold uppercase tracking-wide text-[#B88E2F]">
+                    {service.badge}
+                  </p>
+                ) : null}
                 <p className="mt-1 line-clamp-3 text-[14px] leading-snug text-gray-500">{service.description}</p>
+                {service.priceLabel ? (
+                  <p className="mt-1 text-[15px] font-semibold text-gray-900">{service.priceLabel}</p>
+                ) : null}
                 <p className="mt-1 text-[13px] font-medium text-gray-400">Duración: {service.durationLabel}</p>
 
                 <div className="mt-auto pt-3">
                   <TrackedLink
-                    href={`/turnos?treatment=${encodeURIComponent(service.name)}`}
+                    href={`/turnos?treatment=${encodeURIComponent(service.id)}`}
                     trackAction="reservar_turno"
                     trackLabel="tratamientos"
                     className="flex h-10 w-full items-center justify-center rounded-full bg-[#B88E2F] text-[15px] font-semibold text-white shadow-md transition active:scale-[0.98]"

@@ -6,6 +6,7 @@ import { useSearchParams } from "next/navigation";
 import { TrackedLink } from "@/components/analytics/tracked-link";
 import { AppBottomNav } from "@/components/app-bottom-nav";
 import { LightPageHeader } from "@/components/light-page-header";
+import { EXPERIENCE_PACKAGES_ENABLED } from "@/lib/treatments/experience-packages";
 
 const EXPERIENCE_PROMOS = [
   {
@@ -25,7 +26,7 @@ const EXPERIENCE_PROMOS = [
     imageSrc: "/promo/color.jpeg",
     width: 853,
     height: 1280,
-    href: "/turnos?treatment=color",
+    href: EXPERIENCE_PACKAGES_ENABLED ? "/turnos?promo=color" : "/turnos?treatment=color",
     cta: "Reservar Color Experience",
   },
   {
@@ -35,7 +36,7 @@ const EXPERIENCE_PROMOS = [
     imageSrc: "/promo/balayage.jpeg",
     width: 853,
     height: 1280,
-    href: "/turnos?treatment=balayage",
+    href: EXPERIENCE_PACKAGES_ENABLED ? "/turnos?promo=balayage" : "/turnos?treatment=balayage",
     cta: "Reservar Balayage Experience",
   },
 ] as const;

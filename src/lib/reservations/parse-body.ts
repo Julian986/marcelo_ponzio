@@ -1,4 +1,8 @@
 import { TREATMENT_CATEGORIES } from "@/lib/treatments/catalog";
+import {
+  exclusivePackageComboError,
+  exclusivePackageConflictsWithCombo,
+} from "@/lib/treatments/experience-packages";
 import type { CreateReservationInput, TreatmentCategory } from "./types";
 
 function isCategory(v: unknown): v is TreatmentCategory {
@@ -42,10 +46,10 @@ export function parseCreateReservationBody(
   if (d.length < 10 || d.length > 15) return { ok: false, message: "El teléfono no es válido." };
   if (!whatsappOptIn) return { ok: false, message: "Tenés que aceptar recordatorios por WhatsApp." };
   if (serviceIds.length > 4) return { ok: false, message: "Podés combinar hasta 4 servicios por turno." };
-  if (serviceIds.includes("servicio-completo") && serviceIds.length > 1) {
+  if (exclusivePackageConflictsWithCombo(serviceIds)) {
     return {
       ok: false,
-      message: "Servicio completo ya incluye varios servicios y no se puede combinar con otros.",
+      message: exclusivePackageComboError(),
     };
   }
   const keratinaIdx = serviceIds.indexOf("keratina");

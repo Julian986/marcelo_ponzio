@@ -17,7 +17,8 @@ import {
 } from "@/lib/booking/marcelo-solo-start-gap";
 import { isPublicLeadTimeViolated } from "@/lib/booking/public-slot-lead";
 import { reservationWouldExceedSalonCapacity, slotIntervalMs } from "@/lib/booking/slot-overlap";
-import { SALON_TREATMENTS, findSalonTreatmentById, type SalonTreatment } from "@/lib/treatments/catalog";
+import { findSalonTreatmentById, type SalonTreatment } from "@/lib/treatments/catalog";
+import { exclusivePackageConflictsWithCombo } from "@/lib/treatments/experience-packages";
 
 import { backfillCustomerPhoneDigitsBatch, renormalizeCustomerPhoneDigitsBatch } from "@/lib/reservations/customer-queries";
 
@@ -115,7 +116,7 @@ function buildServiceItemsForInput(input: CreateReservationInput): {
   const comboIds = (input.serviceIds ?? []).map((v) => v.trim()).filter(Boolean);
   const uniqueIds = [...new Set(comboIds)];
   if (uniqueIds.length > 4) return null;
-  if (uniqueIds.includes("servicio-completo") && uniqueIds.length > 1) return null;
+  if (exclusivePackageConflictsWithCombo(uniqueIds)) return null;
   const keratinaIdx = uniqueIds.indexOf("keratina");
   if (keratinaIdx >= 0 && keratinaIdx !== uniqueIds.length - 1) return null;
   if (uniqueIds.length > 0) {
@@ -382,7 +383,7 @@ export async function insertPanelReservation(
   db: Db,
   input: PanelReservationInsertInput,
 ): Promise<{ ok: true; id: string } | { error: string; code?: string }> {
-  const treatment = SALON_TREATMENTS.find((t) => t.id === input.treatmentId.trim());
+  const treatment = findSalonTreatmentById(input.treatmentId.trim());
   if (!treatment) {
     return { error: "Tratamiento inválido.", code: "INVALID_TREATMENT" };
   }

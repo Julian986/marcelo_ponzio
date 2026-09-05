@@ -1,3 +1,5 @@
+import { isOfferedTreatmentId } from "@/lib/treatments/experience-packages";
+
 /** Categorías para filtrar en la app de turnos y en la lista de servicios. */
 export const TREATMENT_CATEGORIES = ["Cortes y peinado", "Color", "Tratamiento"] as const;
 
@@ -21,10 +23,91 @@ export type SalonTreatment = {
   durationLabel: string;
   durationMinutes: number;
   imageUrl: string;
+  /** Precio de lista (flyer). La seña de Mercado Pago es aparte. */
+  priceLabel?: string;
+  badge?: string;
+  experienceFamily?: "color-experience" | "balayage-experience";
 };
 
 /** Servicios oficiales Marcelo Ponzio Estilista (duraciones según mensaje del salón). */
 export const SALON_TREATMENTS: SalonTreatment[] = [
+  {
+    id: "color-essential",
+    name: "Color Essential",
+    subtitle: "Color + terminación · 1 h",
+    description: "Color Experience Essential: color y terminación. Lavado incluido.",
+    category: "Color",
+    durationLabel: "1 h",
+    durationMinutes: 60,
+    imageUrl: IMG.color,
+    priceLabel: "$70.000",
+    experienceFamily: "color-experience",
+  },
+  {
+    id: "color-signature",
+    name: "Color Signature",
+    subtitle: "Color + corte + peinado · 1 h 30 min",
+    description: "Color Experience Signature: color, corte y peinado. Lavado incluido.",
+    category: "Color",
+    durationLabel: "1 h 30 min",
+    durationMinutes: 90,
+    imageUrl: IMG.salon,
+    priceLabel: "$95.000",
+    badge: "La más elegida",
+    experienceFamily: "color-experience",
+  },
+  {
+    id: "color-premium",
+    name: "Color Premium",
+    subtitle: "Color + corte + tratamiento + peinado · 2 h",
+    description:
+      "Color Experience Premium: color, corte, tratamiento premium y peinado. Lavado incluido.",
+    category: "Color",
+    durationLabel: "2 h",
+    durationMinutes: 120,
+    imageUrl: IMG.salon,
+    priceLabel: "$115.000",
+    experienceFamily: "color-experience",
+  },
+  {
+    id: "balayage-essential",
+    name: "Balayage Essential",
+    subtitle: "Balayage + terminación · 2 h",
+    description: "Balayage Experience Essential: balayage y terminación. Lavado incluido.",
+    category: "Color",
+    durationLabel: "2 h",
+    durationMinutes: 120,
+    imageUrl: IMG.mechas,
+    priceLabel: "$150.000",
+    experienceFamily: "balayage-experience",
+  },
+  {
+    id: "balayage-signature",
+    name: "Balayage Signature",
+    subtitle: "Balayage + corte + tratamiento + peinado · 3 h",
+    description:
+      "Balayage Experience Signature: balayage, corte, tratamiento y peinado. Lavado incluido.",
+    category: "Color",
+    durationLabel: "3 h",
+    durationMinutes: 180,
+    imageUrl: IMG.mechas,
+    priceLabel: "$185.000",
+    badge: "La más elegida",
+    experienceFamily: "balayage-experience",
+  },
+  {
+    id: "balayage-premium",
+    name: "Balayage Premium",
+    subtitle: "Balayage personalizado + tratamiento intensivo + corte + peinado · 3 h 30 min",
+    description:
+      "Balayage Experience Premium: balayage personalizado, tratamiento intensivo, corte y peinado. Lavado incluido.",
+    category: "Color",
+    durationLabel: "3 h 30 min",
+    durationMinutes: 210,
+    imageUrl: IMG.mechas,
+    priceLabel: "$215.000",
+    experienceFamily: "balayage-experience",
+  },
   {
     id: "servicio-completo",
     name: "Servicio completo",
@@ -253,11 +336,13 @@ export const SALON_TREATMENTS: SalonTreatment[] = [
 
 export function findSalonTreatmentByName(name: string): SalonTreatment | undefined {
   const t = name.trim();
-  return SALON_TREATMENTS.find((x) => x.name === t);
+  return SALON_TREATMENTS.find((x) => x.name === t && isOfferedTreatmentId(x.id));
 }
 
 export function findSalonTreatmentById(id: string): SalonTreatment | undefined {
-  return SALON_TREATMENTS.find((x) => x.id === id);
+  const t = SALON_TREATMENTS.find((x) => x.id === id);
+  if (!t || !isOfferedTreatmentId(t.id)) return undefined;
+  return t;
 }
 
 /** Duración mostrada en el panel; si es reserva antigua, devuelve un texto genérico. */

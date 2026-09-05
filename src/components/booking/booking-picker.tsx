@@ -14,6 +14,10 @@ import {
   salonWeekdayLabels,
 } from "@/lib/booking/salon-availability";
 import { isArgentinaPublicHoliday } from "@/lib/booking/argentina-holidays";
+import {
+  marceloWorkUnavailableOnDate,
+  treatmentIdsIncludeMarceloWork,
+} from "@/lib/booking/marcelo-work";
 import { argentinaTodayDateKey, minPublicBookableDateKey } from "@/lib/booking/public-slot-lead";
 
 export type BookingPickerProps = {
@@ -107,6 +111,19 @@ export function BookingPicker({
   );
   const visibleMonthLabel = `${salonMonthNames[visibleMonthDate.getMonth()]} ${visibleMonthDate.getFullYear()}`;
   const todayKey = argentinaTodayDateKey();
+  const effectiveTreatmentIds =
+    monthAvailabilityServiceIds.length > 0
+      ? monthAvailabilityServiceIds
+      : selectedTreatmentId.trim()
+        ? [selectedTreatmentId]
+        : [];
+  const showMarceloAwayNotice =
+    treatmentIdsIncludeMarceloWork(effectiveTreatmentIds) &&
+    visibleMonthDate.getFullYear() === 2026 &&
+    visibleMonthDate.getMonth() === 9;
+  const selectedDateMarceloAway = Boolean(
+    selectedDate && marceloWorkUnavailableOnDate(selectedDate, effectiveTreatmentIds),
+  );
 
   useEffect(() => {
     if (!selectedTreatmentId.trim() && monthAvailabilityServiceIds.length === 0) {
@@ -371,6 +388,20 @@ export function BookingPicker({
           </p>
         ) : null}
 
+        {showMarceloAwayNotice ? (
+          <p
+            role="status"
+            className={
+              isLight
+                ? "mb-3 rounded-xl border border-[var(--border-light)] bg-[var(--surface-light)] px-4 py-3 text-center text-[15px] leading-snug text-[var(--text-secondary)]"
+                : "mb-2 rounded-xl border border-[#8a7548]/35 bg-[#fff9ec]/90 px-3 py-2.5 text-center text-[12px] leading-snug text-[#2c241b]"
+            }
+          >
+            Marcelo no atiende del 14 al 24 de octubre. En esas fechas Lucas sigue con color, peinados y
+            tratamientos.
+          </p>
+        ) : null}
+
         <div
           className="grid grid-cols-7 gap-y-2 text-center"
           aria-busy={Boolean(selectedTreatmentId && monthAvailability === null)}
@@ -397,6 +428,7 @@ export function BookingPicker({
               day.isCurrentMonth &&
               day.isAvailable &&
               monthAvailability[day.value] === false;
+            const marceloAwayDay = marceloWorkUnavailableOnDate(day.value, effectiveTreatmentIds);
             const isDisabled = !day.isCurrentMonth || !day.isAvailable || fullyBooked;
 
             const dayClass = isLight
@@ -432,7 +464,9 @@ export function BookingPicker({
                 disabled={isDisabled}
                 title={
                   fullyBooked
-                    ? "Sin cupos para este servicio (ocupado o bloqueado)."
+                    ? marceloAwayDay
+                      ? "Marcelo no atiende ese día (viaje)."
+                      : "Sin cupos para este servicio (ocupado o bloqueado)."
                     : !day.isAvailable && day.isCurrentMonth
                       ? "Día no disponible (cerrado o feriado)."
                       : undefined
@@ -546,14 +580,18 @@ export function BookingPicker({
                         isLight ? "text-[var(--text-primary)]" : "text-amber-100/95"
                       }`}
                     >
-                      {isSelectedDateHoliday
-                        ? "Feriado (cerrado): no hay horarios disponibles para este dia."
-                        : "No hay horarios disponibles para este dia."}
+                      {selectedDateMarceloAway
+                        ? "Marcelo no atiende ese día."
+                        : isSelectedDateHoliday
+                          ? "Feriado (cerrado): no hay horarios disponibles para este dia."
+                          : "No hay horarios disponibles para este dia."}
                     </p>
                     <p className={`mt-2 text-[16px] ${isLight ? "text-[var(--text-secondary)]" : "text-amber-100/75"}`}>
-                      {isSelectedDateHoliday
-                        ? "Elegi otra fecha habilitada para ver turnos disponibles."
-                        : "Proba con otra fecha para ver turnos disponibles."}
+                      {selectedDateMarceloAway
+                        ? "Del 14 al 24 de octubre no toma cortes, despuntados, servicio completo ni reflejos de papel. Elegí otra fecha, o un servicio de Lucas."
+                        : isSelectedDateHoliday
+                          ? "Elegi otra fecha habilitada para ver turnos disponibles."
+                          : "Proba con otra fecha para ver turnos disponibles."}
                     </p>
                   </>
                 ) : bookingContext === "panel" ? (

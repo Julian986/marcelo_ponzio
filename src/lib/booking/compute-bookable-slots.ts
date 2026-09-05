@@ -10,6 +10,7 @@ import {
   loadMarceloSoloStartMs,
   treatmentIdsRequireMarceloSoloStartGap,
 } from "@/lib/booking/marcelo-solo-start-gap";
+import { marceloWorkUnavailableOnDate } from "@/lib/booking/marcelo-work";
 import { KERATINA_ONLY_TIME_LOCAL, filterPublicSlotsByTreatmentRules } from "@/lib/booking/treatment-slot-rules";
 import { filterSlotsBySalonCapacity, loadBusyIntervalsMs } from "@/lib/booking/slot-overlap";
 import { findSalonTreatmentById } from "@/lib/treatments/catalog";
@@ -32,6 +33,7 @@ export async function computeBookableSlots(
 ): Promise<string[]> {
   const treatment = findSalonTreatmentById(params.treatmentId.trim());
   if (!treatment) return [];
+  if (marceloWorkUnavailableOnDate(params.dateKey, [treatment.id])) return [];
 
   let excludeId: ObjectId | undefined;
   const ex = params.excludeReservationHexId?.trim();
@@ -87,6 +89,7 @@ export async function computeBookableSlotsForTreatmentIds(
     .map((id) => findSalonTreatmentById(id))
     .filter((t): t is NonNullable<typeof t> => Boolean(t));
   if (treatments.length !== ids.length) return [];
+  if (marceloWorkUnavailableOnDate(params.dateKey, ids)) return [];
   const totalDuration = treatments.reduce((acc, t) => acc + t.durationMinutes, 0);
 
   let excludeId: ObjectId | undefined;

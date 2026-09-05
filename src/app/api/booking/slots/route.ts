@@ -5,6 +5,10 @@ import { computeBookableSlots, computeBookableSlotsForTreatmentIds } from "@/lib
 import { getDb } from "@/lib/mongodb";
 import { verifyPanelCookie } from "@/lib/panel-turnos-auth";
 import { findSalonTreatmentById } from "@/lib/treatments/catalog";
+import {
+  exclusivePackageComboError,
+  exclusivePackageConflictsWithCombo,
+} from "@/lib/treatments/experience-packages";
 
 export const dynamic = "force-dynamic";
 
@@ -36,9 +40,9 @@ export async function GET(request: Request) {
     if (serviceIds.some((id) => !findSalonTreatmentById(id))) {
       return NextResponse.json({ error: "Hay servicios invalidos." }, { status: 400 });
     }
-    if (serviceIds.includes("servicio-completo") && serviceIds.length > 1) {
+    if (exclusivePackageConflictsWithCombo(serviceIds)) {
       return NextResponse.json(
-        { error: "Servicio completo no se puede combinar con otros servicios." },
+        { error: exclusivePackageComboError() },
         { status: 400 },
       );
     }

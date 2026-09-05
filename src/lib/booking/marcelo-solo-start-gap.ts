@@ -6,11 +6,12 @@ const COLLECTION = "reservations";
 const ACTIVE_STATUSES = ["confirmed"] as const;
 
 /**
- * Servicios que Marcelo hace solo: entre dos inicios de este grupo
+ * Reflejos de papel (solo Marcelo): entre dos inicios de este grupo
  * debe haber al menos 60 minutos (ej. 10:00 → próximo 11:00).
+ * El resto de sus trabajos (corte, despuntado, servicio completo) no usa esta holgura.
+ * Balayage lo hace Lucas: no entra en este grupo.
  */
 export const MARCELO_SOLO_TREATMENT_IDS = new Set([
-  "balayage",
   "reflejos-papel-retoque",
   "reflejos-papel-completo",
 ]);
@@ -59,7 +60,7 @@ export function filterSlotsByMarceloSoloStartGap(
 
 /**
  * Inicios (epoch ms) de reservas confirmadas del día que incluyen
- * balayage / reflejos papel.
+ * reflejos de papel (solo Marcelo).
  */
 export async function loadMarceloSoloStartMs(
   db: Db,
